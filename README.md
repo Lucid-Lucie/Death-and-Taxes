@@ -1,2 +1,2 @@
-# Death-and-Taxes
+# Death & Taxes
 Death comes at a price.
