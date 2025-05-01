@@ -1,0 +1,49 @@
+{
+  "entity.scavenger.ambient": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/villager/idle1",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/idle2",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/idle3",
+        "pitch": 0.7
+      }
+    ],
+    "subtitle": "subtitles.mercenary.entity.scavenger.ambient"
+  },
+  "entity.scavenger.death": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/villager/death",
+        "pitch": 0.7
+      }
+    ],
+    "subtitle": "subtitles.mercenary.entity.scavenger.death"
+  },
+  "entity.scavenger.hurt": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/villager/hit1",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/hit2",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/hit3",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/hit4",
+        "pitch": 0.7
+      }
+    ],
+    "subtitle": "subtitles.mercenary.entity.scavenger.hurt"
+  }
+}

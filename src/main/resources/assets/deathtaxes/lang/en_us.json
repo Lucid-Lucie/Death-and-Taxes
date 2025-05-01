@@ -1,0 +1,7 @@
+{
+  "item.deathtaxes.scavenger_spawn_egg": "Scavenger Spawn Egg",
+  "entity.deathtaxes.scavenger": "Scavenger",
+  "subtitles.mercenary.entity.scavenger.ambient": "Scavenger mumbles",
+  "subtitles.mercenary.entity.scavenger.death": "Scavenger dies",
+  "subtitles.mercenary.entity.scavenger.hurt": "Scavenger hurts"
+}
