@@ -1,0 +1,75 @@
+package lucie.deathtaxes.event;
+
+import lucie.deathtaxes.DeathTaxes;
+import lucie.deathtaxes.entity.Scavenger;
+import lucie.deathtaxes.entity.ScavengerSpawner;
+import lucie.deathtaxes.registry.AttachmentTypeRegistry;
+import lucie.deathtaxes.registry.EntityTypeRegistry;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.Level;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+
+import java.util.Optional;
+import java.util.stream.Stream;
+
+@EventBusSubscriber(modid = DeathTaxes.MODID, bus = EventBusSubscriber.Bus.GAME)
+public class PlayerDropEvent
+{
+    @SubscribeEvent
+    public static void onLivingDrops(LivingDropsEvent event)
+    {
+        if (event.getEntity().level() instanceof ServerLevel serverLevel)
+        {
+            // Filter for suitable player.
+            Optional<LivingEntity> player = Stream.of(event.getEntity())
+                    .filter(livingEntity -> livingEntity.getType().equals(EntityType.PLAYER))
+                    .filter(livingEntity -> !serverLevel.getServer().getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).get())
+                    .filter(livingEntity -> !event.getDrops().isEmpty())
+                    .findFirst();
+
+            // Convert drops into container content.
+            ItemContainerContents content = ItemContainerContents.fromItems(event.getDrops().stream()
+                    .map(ItemEntity::getItem)
+                    .toList());
+
+            // Attach container to player.
+            player.ifPresent(livingEntity -> livingEntity.setData(AttachmentTypeRegistry.DEATH_LOOT, content));
+        }
+    }
+
+    @SubscribeEvent
+    public static void onPlayerClone(PlayerEvent.Clone event)
+    {
+        // Copy container to new player instance.
+        Optional.of(event.getOriginal().getData(AttachmentTypeRegistry.DEATH_LOOT))
+                .filter(content -> !content.equals(ItemContainerContents.EMPTY))
+                .filter(content -> event.isWasDeath())
+                .ifPresent(content -> event.getEntity().setData(AttachmentTypeRegistry.DEATH_LOOT, content));
+    }
+
+    @SubscribeEvent
+    public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event)
+    {
+        if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level)
+        {
+            ItemContainerContents content = player.getData(AttachmentTypeRegistry.DEATH_LOOT);
+
+            if (!content.equals(ItemContainerContents.EMPTY))
+            {
+                ScavengerSpawner.attemptSpawn(level, player, content);
+                player.removeData(AttachmentTypeRegistry.DEATH_LOOT);
+            }
+        }
+    }
+}

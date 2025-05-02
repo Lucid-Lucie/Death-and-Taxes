@@ -1,5 +1,6 @@
 package lucie.deathtaxes.entity;
 
+import lucie.deathtaxes.entity.goal.WanderToPointGoal;
 import lucie.deathtaxes.registry.SoundEventRegistry;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.damagesource.DamageSource;
@@ -38,6 +39,7 @@ public class Scavenger extends PathfinderMob
     @Override
     protected void registerGoals()
     {
+        this.goalSelector.addGoal(2, new WanderToPointGoal(this, 2.0D, 0.75D));
         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.75));
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
         this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 8.0F));
