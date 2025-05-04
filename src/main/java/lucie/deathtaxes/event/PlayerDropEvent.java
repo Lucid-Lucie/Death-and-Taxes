@@ -1,20 +1,15 @@
 package lucie.deathtaxes.event;
 
 import lucie.deathtaxes.DeathTaxes;
-import lucie.deathtaxes.entity.Scavenger;
 import lucie.deathtaxes.entity.ScavengerSpawner;
 import lucie.deathtaxes.registry.AttachmentTypeRegistry;
-import lucie.deathtaxes.registry.EntityTypeRegistry;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.GameRules;
-import net.minecraft.world.level.Level;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
@@ -43,8 +38,12 @@ public class PlayerDropEvent
                     .map(ItemEntity::getItem)
                     .toList());
 
-            // Attach container to player.
-            player.ifPresent(livingEntity -> livingEntity.setData(AttachmentTypeRegistry.DEATH_LOOT, content));
+            // Attach container to player and stop stolen content from spawning.
+            player.ifPresent(livingEntity ->
+            {
+                livingEntity.setData(AttachmentTypeRegistry.DEATH_LOOT, content);
+                event.setCanceled(true);
+            });
         }
     }
 
@@ -67,7 +66,7 @@ public class PlayerDropEvent
 
             if (!content.equals(ItemContainerContents.EMPTY))
             {
-                ScavengerSpawner.attemptSpawn(level, player, content);
+                ScavengerSpawner.spawn(level, player, content);
                 player.removeData(AttachmentTypeRegistry.DEATH_LOOT);
             }
         }

@@ -45,5 +45,56 @@
       }
     ],
     "subtitle": "subtitles.mercenary.entity.scavenger.hurt"
+  },
+  "entity.scavenger.yes": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/villager/yes1",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/yes2",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/yes3",
+        "pitch": 0.7
+      }
+    ],
+    "subtitle": "subtitles.mercenary.entity.scavenger.yes"
+  },
+  "entity.scavenger.no": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/villager/no1",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/no2",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/no3",
+        "pitch": 0.7
+      }
+    ],
+    "subtitle": "subtitles.mercenary.entity.scavenger.no"
+  },
+  "entity.scavenger.trade": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/villager/haggle1",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/haggle2",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/haggle3",
+        "pitch": 0.7
+      }
+    ],
+    "subtitle": "subtitles.mercenary.entity.scavenger.trade"
   }
 }
