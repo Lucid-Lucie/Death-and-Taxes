@@ -1,7 +1,6 @@
 package lucie.deathtaxes.entity.goal;
 
 import lucie.deathtaxes.entity.Scavenger;
-import lucie.deathtaxes.registry.AttachmentTypeRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.phys.Vec3;
@@ -26,35 +25,32 @@ public class WanderToPointGoal extends Goal
     @Override
     public void stop()
     {
-        this.scavenger.setData(AttachmentTypeRegistry.HOME_POS, Optional.empty());
+        this.scavenger.homePosition = null;
         scavenger.getNavigation().stop();
     }
 
     @Override
     public boolean canUse()
     {
-        Optional<BlockPos> home = this.scavenger.getData(AttachmentTypeRegistry.HOME_POS);
-        return home.isPresent() && this.isTooFarAway(home.get(), this.stopDistance);
+        return this.scavenger.homePosition != null && this.isTooFarAway(this.scavenger.homePosition, this.stopDistance);
     }
 
     @Override
     public void tick()
     {
-        Optional<BlockPos> blockPos = this.scavenger.getData(AttachmentTypeRegistry.HOME_POS);
-
-        if (blockPos.isPresent() && this.scavenger.getNavigation().isDone())
+        if (this.scavenger.homePosition != null && this.scavenger.getNavigation().isDone())
         {
-            BlockPos targetPos = blockPos.get();
+            BlockPos blockPos = this.scavenger.homePosition;
 
-            if (this.isTooFarAway(blockPos.get(), 10.0D))
+            if (this.isTooFarAway(blockPos, 10.0D))
             {
-                Vec3 positionA = new Vec3(targetPos.getX() - this.scavenger.getX(), targetPos.getY() - this.scavenger.getY(), targetPos.getZ() - this.scavenger.getZ()).normalize();
+                Vec3 positionA = new Vec3(blockPos.getX() - this.scavenger.getX(), blockPos.getY() - this.scavenger.getY(), blockPos.getZ() - this.scavenger.getZ()).normalize();
                 Vec3 positionB = positionA.scale(10.0).add(this.scavenger.getX(), this.scavenger.getY(), this.scavenger.getZ());
                 this.scavenger.getNavigation().moveTo(positionB.x, positionB.y, positionB.z, this.speedModifier);
             }
             else
             {
-                this.scavenger.getNavigation().moveTo(targetPos.getX(), targetPos.getY(), targetPos.getZ(), this.speedModifier);
+                this.scavenger.getNavigation().moveTo(blockPos.getX(), blockPos.getY(), blockPos.getZ(), this.speedModifier);
             }
         }
     }

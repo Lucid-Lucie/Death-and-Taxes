@@ -3,6 +3,7 @@ package lucie.deathtaxes.client.model;
 import com.mojang.blaze3d.vertex.PoseStack;
 import lucie.deathtaxes.DeathTaxes;
 import lucie.deathtaxes.client.state.ScavengerRenderState;
+import net.minecraft.client.model.AnimationUtils;
 import net.minecraft.client.model.ArmedModel;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.HeadedModel;
@@ -19,14 +20,12 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
 {
     public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(DeathTaxes.withModNamespace("scavenger"), "main");
 
-    private final ModelPart root, head, body, crossedArms, rightArm, leftArm, rightLeg, leftLeg;
+    private final ModelPart head, crossedArms, rightArm, leftArm, rightLeg, leftLeg;
 
     public ScavengerModel(ModelPart root)
     {
         super(root);
-        this.root = root;
         this.head = root.getChild("head");
-        this.body = root.getChild("body");
         this.crossedArms = root.getChild("crossed_arms");
         this.rightArm = root.getChild("right_arm");
         this.leftArm = root.getChild("left_arm");
@@ -40,28 +39,26 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
         MeshDefinition meshdefinition = new MeshDefinition();
         PartDefinition partdefinition = meshdefinition.getRoot();
 
-        // Head.
-        partdefinition.addOrReplaceChild("head", CubeListBuilder.create().texOffs(0, 0).addBox(-4.0F, -10.0F, -4.0F, 8.0F, 10.0F, 8.0F, new CubeDeformation(0.0F))
-                .texOffs(32, 0).addBox(-4.0F, -13.25F, -4.0F, 8.0F, 6.0F, 8.0F, new CubeDeformation(0.01F))
-                .texOffs(28, 54).addBox(-4.0F, -9.25F, -4.0F, 8.0F, 2.0F, 8.0F, new CubeDeformation(0.375F))
+        // Head
+        PartDefinition head = partdefinition.addOrReplaceChild("head", CubeListBuilder.create().texOffs(0, 0).addBox(-4.0F, -10.0F, -4.0F, 8.0F, 10.0F, 8.0F, new CubeDeformation(0.0F))
                 .texOffs(24, 0).addBox(-1.0F, -3.0F, -6.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
+        // Hat.
+        head.addOrReplaceChild("hat", CubeListBuilder.create().texOffs(32, 0).addBox(10.0F, -38.75F, -4.0F, 8.0F, 7.0F, 8.0F, new CubeDeformation(0.125F))
+                .texOffs(28, 53).addBox(9.5F, -33.75F, -4.5F, 9.0F, 2.0F, 9.0F, new CubeDeformation(0.125F)), PartPose.offset(-14.0F, 24.75F, 0.0F));
+
         // Body.
-        partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 20).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 12.0F, 6.0F, new CubeDeformation(0.0F))
-                .texOffs(0, 38).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 18.0F, 6.0F, new CubeDeformation(0.5F)), PartPose.offset(0.0F, 0.0F, 0.0F));
+        partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 18).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 12.0F, 6.0F, new CubeDeformation(0.0F))
+                .texOffs(0, 36).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 18.0F, 6.0F, new CubeDeformation(0.5F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
-        // Crossed arms.
-        partdefinition.addOrReplaceChild("crossed_arms", CubeListBuilder.create().texOffs(44, 22).addBox(-8.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
-                .texOffs(44, 22).mirror().addBox(4.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false)
-                .texOffs(40, 34).addBox(-4.0F, 2.0F, -2.0F, 8.0F, 4.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 3.0F, 0.0F));
-
-        // Arms.
-        partdefinition.addOrReplaceChild("right_arm", CubeListBuilder.create().texOffs(28, 38).addBox(-3.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(-5.0F, 2.0F, 0.0F));
-        partdefinition.addOrReplaceChild("left_arm", CubeListBuilder.create().texOffs(28, 38).mirror().addBox(-1.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(5.0F, 2.0F, 0.0F));
-
-        // Legs.
-        partdefinition.addOrReplaceChild("right_leg", CubeListBuilder.create().texOffs(0, 22).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(-2.0F, 12.0F, 0.0F));
-        partdefinition.addOrReplaceChild("left_leg", CubeListBuilder.create().texOffs(0, 22).mirror().addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(2.0F, 12.0F, 0.0F));
+        // Limbs.
+        partdefinition.addOrReplaceChild("right_leg", CubeListBuilder.create().texOffs(0, 20).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(-2.0F, 12.0F, 0.0F));
+        partdefinition.addOrReplaceChild("left_leg", CubeListBuilder.create().texOffs(0, 20).mirror().addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(2.0F, 12.0F, 0.0F));
+        partdefinition.addOrReplaceChild("right_arm", CubeListBuilder.create().texOffs(28, 36).addBox(-3.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(-5.0F, 2.0F, 0.0F));
+        partdefinition.addOrReplaceChild("left_arm", CubeListBuilder.create().texOffs(28, 36).mirror().addBox(-1.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(5.0F, 2.0F, 0.0F));
+        partdefinition.addOrReplaceChild("crossed_arms", CubeListBuilder.create().texOffs(44, 20).addBox(-8.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
+                .texOffs(44, 20).mirror().addBox(4.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false)
+                .texOffs(40, 32).addBox(-4.0F, 2.0F, -2.0F, 8.0F, 4.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 3.0F, 0.0F));
 
         return LayerDefinition.create(meshdefinition, 64, 64);
     }
@@ -89,11 +86,28 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
         this.leftLeg.yRot = 0.0F;
         this.leftLeg.zRot = 0.0F;
 
+        // Shaking head.
+        if (renderState.isUnhappy)
+        {
+            this.head.yRot += 0.3F * Mth.sin(0.45F * renderState.ageInTicks);
+            this.head.xRot = 0.2F;
+        }
+
+        // Render either crossed or normal arms.
         if (renderState.isAggressive)
         {
             this.leftArm.visible = true;
             this.rightArm.visible = true;
             this.crossedArms.visible = false;
+
+            if (renderState.getMainHandItem().isEmpty())
+            {
+                AnimationUtils.animateZombieArms(this.leftArm, this.rightArm, true, renderState.attackAnim, renderState.ageInTicks);
+            }
+            else
+            {
+                AnimationUtils.swingWeaponDown(this.rightArm, this.leftArm, renderState.mainArm, renderState.attackAnim, renderState.ageInTicks);
+            }
         }
         else
         {
@@ -107,7 +121,16 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
     @Override
     public void translateToHand(@Nonnull HumanoidArm humanoidArm, @Nonnull PoseStack poseStack)
     {
+        this.root.translateAndRotate(poseStack);
 
+        if (humanoidArm == HumanoidArm.LEFT)
+        {
+            this.leftArm.translateAndRotate(poseStack);
+        }
+        else
+        {
+            this.rightArm.translateAndRotate(poseStack);
+        }
     }
 
     @Nonnull

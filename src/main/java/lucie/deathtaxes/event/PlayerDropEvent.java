@@ -40,7 +40,7 @@ public class PlayerDropEvent
             // Attach container to player and stop stolen content from spawning.
             player.ifPresent(livingEntity ->
             {
-                livingEntity.setData(AttachmentTypeRegistry.DEATH_LOOT, content);
+                livingEntity.setData(AttachmentTypeRegistry.PLAYER_INVENTORY_DROPS, content);
                 event.setCanceled(true);
             });
         }
@@ -50,10 +50,10 @@ public class PlayerDropEvent
     public static void onPlayerClone(PlayerEvent.Clone event)
     {
         // Copy container to new player instance.
-        Optional.of(event.getOriginal().getData(AttachmentTypeRegistry.DEATH_LOOT))
+        Optional.of(event.getOriginal().getData(AttachmentTypeRegistry.PLAYER_INVENTORY_DROPS))
                 .filter(content -> !content.equals(ItemContainerContents.EMPTY))
                 .filter(content -> event.isWasDeath())
-                .ifPresent(content -> event.getEntity().setData(AttachmentTypeRegistry.DEATH_LOOT, content));
+                .ifPresent(content -> event.getEntity().setData(AttachmentTypeRegistry.PLAYER_INVENTORY_DROPS, content));
     }
 
     @SubscribeEvent
@@ -62,7 +62,7 @@ public class PlayerDropEvent
         Player player = event.getEntity();
 
         // Check for non-empty container content.
-        Optional<ItemContainerContents> optional = Optional.of(player.getData(AttachmentTypeRegistry.DEATH_LOOT))
+        Optional<ItemContainerContents> optional = Optional.of(player.getData(AttachmentTypeRegistry.PLAYER_INVENTORY_DROPS))
                 .filter(content -> !player.level().isClientSide)
                 .filter(content -> !content.equals(ItemContainerContents.EMPTY));
 
@@ -70,7 +70,7 @@ public class PlayerDropEvent
         optional.ifPresent(content ->
         {
             Scavenger.spawn((ServerLevel) player.level(), (ServerPlayer) player, content);
-            player.removeData(AttachmentTypeRegistry.DEATH_LOOT);
+            player.removeData(AttachmentTypeRegistry.PLAYER_INVENTORY_DROPS);
         });
     }
 }
