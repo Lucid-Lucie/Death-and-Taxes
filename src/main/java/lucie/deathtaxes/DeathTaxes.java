@@ -1,9 +1,6 @@
 package lucie.deathtaxes;
 
-import lucie.deathtaxes.registry.AttachmentTypeRegistry;
-import lucie.deathtaxes.registry.EntityTypeRegistry;
-import lucie.deathtaxes.registry.ItemRegistry;
-import lucie.deathtaxes.registry.SoundEventRegistry;
+import lucie.deathtaxes.registry.*;
 import net.minecraft.resources.ResourceLocation;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.common.Mod;
@@ -15,6 +12,7 @@ public class DeathTaxes
 
     public DeathTaxes(IEventBus modBus)
     {
+        LootConditionRegistry.LOOT_CONDITIONS.register(modBus);
         AttachmentTypeRegistry.ATTACHMENT_TYPES.register(modBus);
         SoundEventRegistry.SOUND_EVENTS.register(modBus);
         EntityTypeRegistry.ENTITY_TYPES.register(modBus);

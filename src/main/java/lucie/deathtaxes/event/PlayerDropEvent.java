@@ -1,13 +1,14 @@
 package lucie.deathtaxes.event;
 
 import lucie.deathtaxes.DeathTaxes;
-import lucie.deathtaxes.entity.ScavengerSpawner;
+import lucie.deathtaxes.entity.Scavenger;
 import lucie.deathtaxes.registry.AttachmentTypeRegistry;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.level.GameRules;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -16,7 +17,6 @@ import net.neoforged.neoforge.event.entity.living.LivingDropsEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 import java.util.Optional;
-import java.util.stream.Stream;
 
 @EventBusSubscriber(modid = DeathTaxes.MODID, bus = EventBusSubscriber.Bus.GAME)
 public class PlayerDropEvent
@@ -27,11 +27,10 @@ public class PlayerDropEvent
         if (event.getEntity().level() instanceof ServerLevel serverLevel)
         {
             // Filter for suitable player.
-            Optional<LivingEntity> player = Stream.of(event.getEntity())
+            Optional<LivingEntity> player = Optional.of(event.getEntity())
                     .filter(livingEntity -> livingEntity.getType().equals(EntityType.PLAYER))
                     .filter(livingEntity -> !serverLevel.getServer().getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).get())
-                    .filter(livingEntity -> !event.getDrops().isEmpty())
-                    .findFirst();
+                    .filter(livingEntity -> !event.getDrops().isEmpty());
 
             // Convert drops into container content.
             ItemContainerContents content = ItemContainerContents.fromItems(event.getDrops().stream()
@@ -60,15 +59,18 @@ public class PlayerDropEvent
     @SubscribeEvent
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event)
     {
-        if (event.getEntity() instanceof ServerPlayer player && player.level() instanceof ServerLevel level)
-        {
-            ItemContainerContents content = player.getData(AttachmentTypeRegistry.DEATH_LOOT);
+        Player player = event.getEntity();
 
-            if (!content.equals(ItemContainerContents.EMPTY))
-            {
-                ScavengerSpawner.spawn(level, player, content);
-                player.removeData(AttachmentTypeRegistry.DEATH_LOOT);
-            }
-        }
+        // Check for non-empty container content.
+        Optional<ItemContainerContents> optional = Optional.of(player.getData(AttachmentTypeRegistry.DEATH_LOOT))
+                .filter(content -> !player.level().isClientSide)
+                .filter(content -> !content.equals(ItemContainerContents.EMPTY));
+
+        // Spawn Scavenger.
+        optional.ifPresent(content ->
+        {
+            Scavenger.spawn((ServerLevel) player.level(), (ServerPlayer) player, content);
+            player.removeData(AttachmentTypeRegistry.DEATH_LOOT);
+        });
     }
 }

@@ -1,5 +1,5 @@
 {
-  "type": "minecraft:block",
+  "type": "minecraft:evaluation",
   "pools": [
     {
       "rolls": 1,
@@ -10,14 +10,32 @@
           "functions": [
             {
               "function": "minecraft:set_count",
-              "count": 2,
+              "count": 1,
               "add": true,
               "conditions": [
                 {
-                  "condition": "minecraft:match_tool",
-                  "predicate": {
-                    "items": "#minecraft:chest_armor"
-                  }
+                  "condition": "deathtaxes:has_enchantments"
+                }
+              ]
+            },
+            {
+              "function": "minecraft:set_count",
+              "count": 1,
+              "add": true,
+              "conditions": [
+                {
+                  "condition": "deathtaxes:has_component",
+                  "component": "minecraft:max_damage"
+                }
+              ]
+            },
+            {
+              "function": "minecraft:set_count",
+              "count": 1,
+              "add": true,
+              "conditions": [
+                {
+                  "condition": "deathtaxes:has_rarity"
                 }
               ]
             }

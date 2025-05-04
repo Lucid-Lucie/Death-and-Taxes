@@ -3,19 +3,23 @@ package lucie.deathtaxes.entity;
 import lucie.deathtaxes.entity.goal.TradingWithPlayerGoal;
 import lucie.deathtaxes.entity.goal.WanderToPointGoal;
 import lucie.deathtaxes.entity.goal.WatchTradingPlayerGoal;
+import lucie.deathtaxes.loot.ItemEvaluation;
 import lucie.deathtaxes.registry.AttachmentTypeRegistry;
+import lucie.deathtaxes.registry.EntityTypeRegistry;
 import lucie.deathtaxes.registry.ItemRegistry;
 import lucie.deathtaxes.registry.SoundEventRegistry;
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.stats.Stats;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.ExperienceOrb;
-import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
@@ -31,7 +35,10 @@ import net.minecraft.world.item.trading.ItemCost;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.levelgen.Heightmap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -124,6 +131,58 @@ public class Scavenger extends PathfinderMob implements Merchant
     protected SoundEvent getDeathSound()
     {
         return SoundEventRegistry.SCAVENGER_DEATH.value();
+    }
+
+    /* Spawning */
+
+    public static void spawn(ServerLevel level, ServerPlayer player, ItemContainerContents content)
+    {
+        // Use player respawn location as home position.
+        BlockPos target = player.blockPosition();
+
+        // Find suitable spawnpoint for entity.
+        BlockPos spawnpoint = Scavenger.locatePosition(level, target, level.random).orElse(target);
+
+        // Spawn entity with necessary attachment data.
+        Optional.ofNullable(EntityTypeRegistry.SCAVENGER.value().spawn(level, spawnpoint, EntitySpawnReason.TRIGGERED)).ifPresent(entity ->
+        {
+            entity.setData(AttachmentTypeRegistry.SCAVENGED_GOODS, ItemEvaluation.evaluateItems(player, level, content));
+            entity.setData(AttachmentTypeRegistry.HOME_POS, Optional.of(target));
+        });
+    }
+
+    private static Optional<BlockPos> locatePosition(LevelReader level, BlockPos blockPos, RandomSource randomSource)
+    {
+        SpawnPlacementType spawnPlacementType = SpawnPlacements.getPlacementType(EntityTypeRegistry.SCAVENGER.value());
+
+        for (int i = 0; i < 16; i++)
+        {
+            int x = blockPos.getX() + randomSource.nextInt(64) - 32;
+            int z = blockPos.getZ() + randomSource.nextInt(64) - 32;
+            int y = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
+
+            BlockPos randomPos = new BlockPos(x, y, z);
+
+            if (spawnPlacementType.isSpawnPositionOk(level, randomPos, EntityTypeRegistry.SCAVENGER.value()) && Scavenger.hasEnoughSpace(level, randomPos))
+            {
+                return Optional.of(randomPos);
+            }
+        }
+
+        return Optional.empty();
+    }
+
+    private static boolean hasEnoughSpace(BlockGetter level, BlockPos pos)
+    {
+        for (BlockPos blockpos : BlockPos.betweenClosed(pos, pos.offset(1, 2, 1)))
+        {
+            if (!level.getBlockState(blockpos).getCollisionShape(level, blockpos).isEmpty())
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     /* Merchant */
