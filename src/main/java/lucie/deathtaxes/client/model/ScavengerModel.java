@@ -94,19 +94,35 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
         }
 
         // Render either crossed or normal arms.
-        if (renderState.isAggressive)
+        if (renderState.isAggressive || renderState.hasHandsRaised)
         {
             this.leftArm.visible = true;
             this.rightArm.visible = true;
             this.crossedArms.visible = false;
 
-            if (renderState.getMainHandItem().isEmpty())
+            if (renderState.isAggressive)
             {
-                AnimationUtils.animateZombieArms(this.leftArm, this.rightArm, true, renderState.attackAnim, renderState.ageInTicks);
+                if (renderState.getMainHandItem().isEmpty())
+                {
+                    AnimationUtils.animateZombieArms(this.leftArm, this.rightArm, true, renderState.attackAnim, renderState.ageInTicks);
+                }
+                else
+                {
+                    AnimationUtils.swingWeaponDown(this.rightArm, this.leftArm, renderState.mainArm, renderState.attackAnim, renderState.ageInTicks);
+                }
             }
             else
             {
-                AnimationUtils.swingWeaponDown(this.rightArm, this.leftArm, renderState.mainArm, renderState.attackAnim, renderState.ageInTicks);
+                this.rightArm.z = 0.0F;
+                this.rightArm.x = -5.0F;
+                this.leftArm.z = 0.0F;
+                this.leftArm.x = 5.0F;
+                this.rightArm.xRot = Mth.cos(renderState.ageInTicks * 0.6662F) * 0.25F;
+                this.leftArm.xRot = Mth.cos(renderState.ageInTicks * 0.6662F) * 0.25F;
+                this.rightArm.zRot = 2.3561945F;
+                this.leftArm.zRot = -2.3561945F;
+                this.rightArm.yRot = 0.0F;
+                this.leftArm.yRot = 0.0F;
             }
         }
         else

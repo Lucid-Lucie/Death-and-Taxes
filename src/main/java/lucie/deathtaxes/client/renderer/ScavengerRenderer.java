@@ -51,9 +51,10 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerRenderSta
     {
         super.extractRenderState(scavenger, renderState, partialTick);
         ArmedEntityRenderState.extractArmedEntityRenderState(scavenger, renderState, this.itemModelResolver);
-        renderState.isAggressive = scavenger.isAngry();
         renderState.mainArm = scavenger.getMainArm();
         renderState.attackAnim = scavenger.getAttackAnim(partialTick);
-        renderState.isUnhappy = scavenger.getEntityData().get(Scavenger.DATA_UNHAPPY_COUNTER) > 0;
+        renderState.isAggressive = scavenger.isAngry();
+        renderState.isUnhappy = scavenger.isUnhappy();
+        renderState.hasHandsRaised = scavenger.hasEntrance();
     }
 }
