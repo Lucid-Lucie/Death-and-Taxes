@@ -4,8 +4,6 @@ import lucie.deathtaxes.client.state.ScavengerRenderState;
 import lucie.deathtaxes.entity.goal.TradingWithPlayerGoal;
 import lucie.deathtaxes.entity.goal.WanderToPointGoal;
 import lucie.deathtaxes.entity.goal.WatchTradingPlayerGoal;
-import lucie.deathtaxes.loot.ItemEvaluation;
-import lucie.deathtaxes.registry.EntityTypeRegistry;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import lucie.deathtaxes.registry.SoundEventRegistry;
 import net.minecraft.core.BlockPos;
@@ -15,7 +13,6 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.TimeUtil;
@@ -35,15 +32,11 @@ import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.trading.Merchant;
 import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.levelgen.Heightmap;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -253,7 +246,8 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
             }
 
             return InteractionResult.SUCCESS;
-        } else
+        }
+        else
         {
             return super.mobInteract(player, hand);
         }
@@ -284,61 +278,6 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     public boolean removeWhenFarAway(double distanceToClosestPlayer)
     {
         return false;
-    }
-
-    public static void trySpawn(ServerLevel level, ServerPlayer player, ItemContainerContents content)
-    {
-        MerchantOffers offers = ItemEvaluation.evaluateItems(player, level, content);
-
-        if (!offers.isEmpty())
-        {
-            // Use player respawn location as the home position.
-            BlockPos target = player.blockPosition();
-
-            // Find suitable spawnpoint for entity.
-            BlockPos spawnpoint = Scavenger.locatePosition(level, target, level.random).orElse(target);
-
-            // Spawn entity with extra data.
-            Optional.ofNullable(EntityTypeRegistry.SCAVENGER.value().spawn(level, spawnpoint, EntitySpawnReason.TRIGGERED)).ifPresent(scavenger ->
-            {
-                scavenger.merchantOffers = offers;
-                scavenger.homePosition = target;
-            });
-        }
-    }
-
-    private static Optional<BlockPos> locatePosition(LevelReader level, BlockPos blockPos, RandomSource randomSource)
-    {
-        SpawnPlacementType spawnPlacementType = SpawnPlacements.getPlacementType(EntityTypeRegistry.SCAVENGER.value());
-
-        for (int i = 0; i < 16; i++)
-        {
-            int x = blockPos.getX() + randomSource.nextInt(64) - 32;
-            int z = blockPos.getZ() + randomSource.nextInt(64) - 32;
-            int y = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
-
-            BlockPos randomPos = new BlockPos(x, y, z);
-
-            if (spawnPlacementType.isSpawnPositionOk(level, randomPos, EntityTypeRegistry.SCAVENGER.value()) && Scavenger.hasEnoughSpace(level, randomPos))
-            {
-                return Optional.of(randomPos);
-            }
-        }
-
-        return Optional.empty();
-    }
-
-    private static boolean hasEnoughSpace(BlockGetter level, BlockPos pos)
-    {
-        for (BlockPos blockpos : BlockPos.betweenClosed(pos, pos.offset(1, 2, 1)))
-        {
-            if (!level.getBlockState(blockpos).getCollisionShape(level, blockpos).isEmpty())
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     /* Data */
