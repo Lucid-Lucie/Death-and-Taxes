@@ -286,20 +286,25 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         return false;
     }
 
-    public static void spawn(ServerLevel level, ServerPlayer player, ItemContainerContents content)
+    public static void trySpawn(ServerLevel level, ServerPlayer player, ItemContainerContents content)
     {
-        // Use player respawn location as the home position.
-        BlockPos target = player.blockPosition();
+        MerchantOffers offers = ItemEvaluation.evaluateItems(player, level, content);
 
-        // Find suitable spawnpoint for entity.
-        BlockPos spawnpoint = Scavenger.locatePosition(level, target, level.random).orElse(target);
-
-        // Spawn entity with extra data.
-        Optional.ofNullable(EntityTypeRegistry.SCAVENGER.value().spawn(level, spawnpoint, EntitySpawnReason.TRIGGERED)).ifPresent(scavenger ->
+        if (!offers.isEmpty())
         {
-            scavenger.merchantOffers = ItemEvaluation.evaluateItems(player, level, content);
-            scavenger.homePosition = target;
-        });
+            // Use player respawn location as the home position.
+            BlockPos target = player.blockPosition();
+
+            // Find suitable spawnpoint for entity.
+            BlockPos spawnpoint = Scavenger.locatePosition(level, target, level.random).orElse(target);
+
+            // Spawn entity with extra data.
+            Optional.ofNullable(EntityTypeRegistry.SCAVENGER.value().spawn(level, spawnpoint, EntitySpawnReason.TRIGGERED)).ifPresent(scavenger ->
+            {
+                scavenger.merchantOffers = offers;
+                scavenger.homePosition = target;
+            });
+        }
     }
 
     private static Optional<BlockPos> locatePosition(LevelReader level, BlockPos blockPos, RandomSource randomSource)

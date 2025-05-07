@@ -69,7 +69,7 @@ public class PlayerDropEvent
         // Spawn Scavenger.
         optional.ifPresent(content ->
         {
-            Scavenger.spawn((ServerLevel) player.level(), (ServerPlayer) player, content);
+            Scavenger.trySpawn((ServerLevel) player.level(), (ServerPlayer) player, content);
             player.removeData(AttachmentTypeRegistry.PLAYER_INVENTORY_DROPS);
         });
     }

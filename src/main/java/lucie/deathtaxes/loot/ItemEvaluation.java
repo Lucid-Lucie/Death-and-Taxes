@@ -53,6 +53,12 @@ public class ItemEvaluation
                     .map(itemCost -> new MerchantOffer(new ItemCost(itemCost.getItem(), itemCost.getCount()), itemStack, 1, itemCost.getCount() * 4, 1.0F))
                     .ifPresent(merchantOffers::add);
         }
+        
+        if (!merchantOffers.isEmpty())
+        {
+            // Sort items highest to lowest.
+            merchantOffers.sort((a, b) -> Integer.compare(b.getBaseCostA().getCount(), a.getBaseCostA().getCount()));
+        }
 
         return merchantOffers;
     }
