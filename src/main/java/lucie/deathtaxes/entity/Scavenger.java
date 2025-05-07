@@ -64,6 +64,8 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     @Nullable
     private UUID persistentAngerTarget;
 
+    private long despawnDelay = 0;
+
     private static final EntityDataAccessor<Integer> DATA_PERSISTENT_ANGER_TIME = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.INT);
 
     private static final EntityDataAccessor<Long> DATA_UNHAPPY_COUNTER = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.LONG);
@@ -134,6 +136,18 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
             {
                 this.level().broadcastEntityEvent(this, (byte) 1);
             }
+
+            // Despawn entity if no more offers are available.
+            if (this.merchantOffers != null && this.merchantOffers.stream().allMatch(MerchantOffer::isOutOfStock) && tradingPlayer == null)
+            {
+                this.despawn();
+            }
+
+            // Despawn entity if timer has gone out.
+            if (this.level().getGameTime() > this.despawnDelay && tradingPlayer == null && this.despawnDelay != 0)
+            {
+                this.despawn();
+            }
         }
     }
 
@@ -163,7 +177,8 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         if (id == 0)
         {
             this.makePoofParticles();
-        } else if (id == 1)
+        }
+        else if (id == 1)
         {
             double x = this.getX() + this.random.nextDouble() * (double) 5.0F - (double) 2.5F;
             double y = this.getY() + this.random.nextDouble() * (double) 2.5F;
@@ -189,6 +204,16 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
             this.ambientSoundTime = 0;
             this.entityData.set(Scavenger.DATA_UNHAPPY_COUNTER, this.level().getGameTime() + 40);
             this.makeSound(SoundEventRegistry.SCAVENGER_NO.value());
+        }
+    }
+
+    public void despawn()
+    {
+        if (!this.level().isClientSide)
+        {
+            this.makeSound(SoundEventRegistry.SCAVENGER_TELEPORT.value());
+            this.level().broadcastEntityEvent(this, (byte) 0);
+            this.discard();
         }
     }
 
@@ -255,6 +280,12 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         return SoundEventRegistry.SCAVENGER_DEATH.value();
     }
 
+    @Override
+    public boolean removeWhenFarAway(double distanceToClosestPlayer)
+    {
+        return false;
+    }
+
     public static void spawn(ServerLevel level, ServerPlayer player, ItemContainerContents content)
     {
         // Use player respawn location as the home position.
@@ -319,6 +350,8 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         // Set dramatic effect.
         if (spawnReason == EntitySpawnReason.TRIGGERED)
         {
+            this.despawnDelay = this.level().getGameTime() + 28000;
+            this.restrictTo(this.blockPosition(), 16);
             this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, true);
             this.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 80));
         }
@@ -351,6 +384,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         compoundTag.putLong("UnhappyCounter", this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER));
         compoundTag.putLong("HandsRaised", this.entityData.get(Scavenger.DATA_HANDS_RAISED));
         compoundTag.putBoolean("DramaticEntrance", this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE));
+        compoundTag.putLong("DespawnDelay", this.despawnDelay);
         compoundTag.storeNullable("HomePosition", BlockPos.CODEC, this.homePosition);
         compoundTag.storeNullable("MerchantOffers", MerchantOffers.CODEC, this.merchantOffers);
     }
@@ -363,6 +397,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         this.entityData.set(Scavenger.DATA_UNHAPPY_COUNTER, compoundTag.getLongOr("UnhappyCounter", 0L));
         this.entityData.set(Scavenger.DATA_HANDS_RAISED, compoundTag.getLongOr("HandsRaised", 0L));
         this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, compoundTag.getBooleanOr("DramaticEntrance", false));
+        this.despawnDelay = compoundTag.getLongOr("DespawnDelay", 0L);
         this.homePosition = compoundTag.read("HomePosition", BlockPos.CODEC).orElse(null);
         this.merchantOffers = compoundTag.read("MerchantOffers", MerchantOffers.CODEC).orElse(null);
     }
