@@ -51,10 +51,15 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerRenderSta
     {
         super.extractRenderState(scavenger, renderState, partialTick);
         ArmedEntityRenderState.extractArmedEntityRenderState(scavenger, renderState, this.itemModelResolver);
-        renderState.mainArm = scavenger.getMainArm();
-        renderState.attackAnim = scavenger.getAttackAnim(partialTick);
-        renderState.isAggressive = scavenger.isAngry();
-        renderState.isUnhappy = scavenger.isUnhappy();
-        renderState.hasHandsRaised = scavenger.hasEntrance();
+        scavenger.setRenderState(renderState, partialTick);
+    }
+
+    @Override
+    public void render(@Nonnull ScavengerRenderState renderState, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource bufferSource, int packedLight)
+    {
+        if (!renderState.isDramatic)
+        {
+            super.render(renderState, poseStack, bufferSource, packedLight);
+        }
     }
 }

@@ -23,6 +23,7 @@ public class TradingWithPlayerGoal extends Goal
         return Optional.ofNullable(this.scavenger.getTradingPlayer())
                 .filter(player -> this.scavenger.isAlive())
                 .filter(player -> this.scavenger.onGround())
+                .filter(player -> !this.scavenger.isAngry())
                 .filter(player -> !this.scavenger.isInWater())
                 .filter(player -> !this.scavenger.hurtMarked)
                 .filter(player -> this.scavenger.distanceToSqr(player) <= 16.0D)

@@ -32,7 +32,7 @@ public class WanderToPointGoal extends Goal
     @Override
     public boolean canUse()
     {
-        return this.scavenger.homePosition != null && this.isTooFarAway(this.scavenger.homePosition, this.stopDistance);
+        return this.scavenger.homePosition != null && this.isTooFarAway(this.scavenger.homePosition, this.stopDistance) && !scavenger.isAngry();
     }
 
     @Override

@@ -1,10 +1,11 @@
 {
   "item.deathtaxes.scavenger_spawn_egg": "Scavenger Spawn Egg",
   "entity.deathtaxes.scavenger": "Scavenger",
-  "subtitles.mercenary.entity.scavenger.ambient": "Scavenger mumbles",
-  "subtitles.mercenary.entity.scavenger.death": "Scavenger dies",
-  "subtitles.mercenary.entity.scavenger.hurt": "Scavenger hurts",
-  "subtitles.mercenary.entity.scavenger.yes": "Scavenger agrees",
-  "subtitles.mercenary.entity.scavenger.no": "Scavenger disagrees",
-  "subtitles.mercenary.entity.scavenger.trade": "Scavenger trades"
+  "subtitles.deathtaxes.entity.scavenger.ambient": "Scavenger mumbles",
+  "subtitles.deathtaxes.entity.scavenger.death": "Scavenger dies",
+  "subtitles.deathtaxes.entity.scavenger.hurt": "Scavenger hurts",
+  "subtitles.deathtaxes.entity.scavenger.yes": "Scavenger agrees",
+  "subtitles.deathtaxes.entity.scavenger.no": "Scavenger disagrees",
+  "subtitles.deathtaxes.entity.scavenger.trade": "Scavenger trades",
+  "subtitles.deathtaxes.entity.scavenger.teleport": "Scavenger appears"
 }

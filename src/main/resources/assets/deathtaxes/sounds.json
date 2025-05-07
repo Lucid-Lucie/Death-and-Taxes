@@ -14,7 +14,7 @@
         "pitch": 0.7
       }
     ],
-    "subtitle": "subtitles.mercenary.entity.scavenger.ambient"
+    "subtitle": "subtitles.deathtaxes.entity.scavenger.ambient"
   },
   "entity.scavenger.death": {
     "sounds": [
@@ -23,7 +23,7 @@
         "pitch": 0.7
       }
     ],
-    "subtitle": "subtitles.mercenary.entity.scavenger.death"
+    "subtitle": "subtitles.deathtaxes.entity.scavenger.death"
   },
   "entity.scavenger.hurt": {
     "sounds": [
@@ -44,7 +44,7 @@
         "pitch": 0.7
       }
     ],
-    "subtitle": "subtitles.mercenary.entity.scavenger.hurt"
+    "subtitle": "subtitles.deathtaxes.entity.scavenger.hurt"
   },
   "entity.scavenger.yes": {
     "sounds": [
@@ -61,7 +61,7 @@
         "pitch": 0.7
       }
     ],
-    "subtitle": "subtitles.mercenary.entity.scavenger.yes"
+    "subtitle": "subtitles.deathtaxes.entity.scavenger.yes"
   },
   "entity.scavenger.no": {
     "sounds": [
@@ -78,23 +78,13 @@
         "pitch": 0.7
       }
     ],
-    "subtitle": "subtitles.mercenary.entity.scavenger.no"
+    "subtitle": "subtitles.deathtaxes.entity.scavenger.no"
   },
-  "entity.scavenger.trade": {
+  "entity.scavenger.teleport": {
     "sounds": [
-      {
-        "name": "minecraft:mob/villager/haggle1",
-        "pitch": 0.7
-      },
-      {
-        "name": "minecraft:mob/villager/haggle2",
-        "pitch": 0.7
-      },
-      {
-        "name": "minecraft:mob/villager/haggle3",
-        "pitch": 0.7
-      }
+      "mob/endermen/portal",
+      "mob/endermen/portal2"
     ],
-    "subtitle": "subtitles.mercenary.entity.scavenger.trade"
+    "subtitle": "subtitles.deathtaxes.entity.scavenger.teleport"
   }
 }

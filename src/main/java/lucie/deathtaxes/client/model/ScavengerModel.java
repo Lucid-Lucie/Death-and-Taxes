@@ -94,7 +94,7 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
         }
 
         // Render either crossed or normal arms.
-        if (renderState.isAggressive || renderState.hasHandsRaised)
+        if (renderState.isAggressive || renderState.isHandsRaised)
         {
             this.leftArm.visible = true;
             this.rightArm.visible = true;
