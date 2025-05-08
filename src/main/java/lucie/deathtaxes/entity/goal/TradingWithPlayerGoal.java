@@ -32,6 +32,16 @@ public class TradingWithPlayerGoal extends Goal
     }
 
     @Override
+    public void tick()
+    {
+        // Spawn flies while trading.
+        if (this.scavenger.level().getGameTime() % 5 == 0 && this.scavenger.getRandom().nextBoolean())
+        {
+            this.scavenger.level().broadcastEntityEvent(this.scavenger, (byte)0);
+        }
+    }
+
+    @Override
     public void start()
     {
         this.scavenger.getNavigation().stop();

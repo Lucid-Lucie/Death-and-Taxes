@@ -124,14 +124,12 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
                 for (int i = 0; i < 2; i++)
                 {
                     Bat bat = EntityType.BAT.spawn((ServerLevel) this.level(), this.blockPosition().above(), EntitySpawnReason.TRIGGERED);
-                    if (bat != null) bat.setData(AttachmentTypeRegistry.DESPAWN_TIME.get(), this.level().getGameTime() + 120 + (10 * i));
+                    if (bat != null)
+                    {
+                        bat.setData(AttachmentTypeRegistry.DESPAWN_TIME.get(), this.level().getGameTime() + 120 + (10 * i));
+                        bat.restrictTo(this.blockPosition(), 16);
+                    }
                 }
-            }
-
-            // Spawn flies.
-            if (this.level().getGameTime() % 80 == 0 && this.isAlive() && !this.isInvisible())
-            {
-                this.level().broadcastEntityEvent(this, (byte) 0);
             }
 
             // Despawn entity if no more offers are available.

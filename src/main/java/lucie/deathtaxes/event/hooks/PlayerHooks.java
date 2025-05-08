@@ -16,6 +16,7 @@ import net.minecraft.world.entity.SpawnPlacements;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.BlockGetter;
@@ -35,7 +36,7 @@ public class PlayerHooks
         // Only process drops if keep inventory is disabled and drops exist.
         if (!level.getServer().getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).get() && !drops.isEmpty())
         {
-            TagKey<Item> blacklist = ItemTags.create(DeathTaxes.withModNamespace("blacklisted_drops"));
+            TagKey<Item> blacklist = ItemTags.create(DeathTaxes.withModNamespace("blacklisted_loot"));
 
             // Create a filtered container excluding blacklisted items.
             ItemContainerContents contents = ItemContainerContents.fromItems(drops.stream()
