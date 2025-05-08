@@ -9,6 +9,7 @@ import lucie.deathtaxes.registry.SoundEventRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -330,7 +331,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         compoundTag.putBoolean("DramaticEntrance", this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE));
         compoundTag.putLong("DespawnDelay", this.despawnDelay);
         compoundTag.storeNullable("HomePosition", BlockPos.CODEC, this.homePosition);
-        compoundTag.storeNullable("MerchantOffers", MerchantOffers.CODEC, this.merchantOffers);
+        compoundTag.storeNullable("MerchantOffers", MerchantOffers.CODEC, this.registryAccess().createSerializationContext(NbtOps.INSTANCE), this.merchantOffers);
     }
 
     @Override
@@ -343,7 +344,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, compoundTag.getBooleanOr("DramaticEntrance", false));
         this.despawnDelay = compoundTag.getLongOr("DespawnDelay", 0L);
         this.homePosition = compoundTag.read("HomePosition", BlockPos.CODEC).orElse(null);
-        this.merchantOffers = compoundTag.read("MerchantOffers", MerchantOffers.CODEC).orElse(null);
+        this.merchantOffers = compoundTag.read("MerchantOffers", MerchantOffers.CODEC, this.registryAccess().createSerializationContext(NbtOps.INSTANCE)).orElse(null);
     }
 
     /* Merchant */

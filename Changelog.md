@@ -8,4 +8,6 @@
 
 * Fixed issue with Scavenger spawning when only blacklisted items were dropped.
 
+* Fixed issue with enchanted items not being stored correctly.
+
 
