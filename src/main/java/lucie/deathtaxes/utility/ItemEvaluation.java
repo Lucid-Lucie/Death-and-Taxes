@@ -1,4 +1,4 @@
-package lucie.deathtaxes.loot;
+package lucie.deathtaxes.utility;
 
 import lucie.deathtaxes.DeathTaxes;
 import net.minecraft.core.registries.Registries;

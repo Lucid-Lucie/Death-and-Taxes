@@ -1,8 +1,7 @@
 package lucie.deathtaxes.event.hooks;
 
 import lucie.deathtaxes.DeathTaxes;
-import lucie.deathtaxes.entity.Scavenger;
-import lucie.deathtaxes.loot.ItemEvaluation;
+import lucie.deathtaxes.utility.ItemEvaluation;
 import lucie.deathtaxes.registry.AttachmentTypeRegistry;
 import lucie.deathtaxes.registry.EntityTypeRegistry;
 import net.minecraft.core.BlockPos;

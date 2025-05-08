@@ -4,7 +4,11 @@
 
 **1.1.0**
 
+* Price rebalance.
+
 * Trade Inventory now sorts item highest to lowest.
+
+* Removed redundant loot conditions.
 
 * Fixed issue with Scavenger spawning when only blacklisted items were dropped.
 

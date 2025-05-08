@@ -1,43 +1,99 @@
 {
-  "type": "minecraft:evaluation",
   "pools": [
     {
       "rolls": 1,
       "entries": [
         {
           "type": "minecraft:item",
-          "name": "minecraft:emerald",
-          "functions": [
+          "name": "minecraft:emerald"
+        }
+      ],
+      "functions": [
+        {
+          "function": "minecraft:set_count",
+          "count": 3,
+          "add": true,
+          "conditions": [
             {
-              "function": "minecraft:set_count",
-              "count": 1,
-              "add": true,
-              "conditions": [
-                {
-                  "condition": "deathtaxes:has_enchantments"
-                }
-              ]
-            },
+              "condition": "minecraft:match_tool",
+              "predicate": {
+                "items": "#c:armors"
+              }
+            }
+          ]
+        },
+        {
+          "function": "minecraft:set_count",
+          "count": 2,
+          "add": true,
+          "conditions": [
             {
-              "function": "minecraft:set_count",
-              "count": 1,
-              "add": true,
-              "conditions": [
-                {
-                  "condition": "deathtaxes:has_component",
-                  "component": "minecraft:max_damage"
-                }
-              ]
-            },
+              "condition": "minecraft:match_tool",
+              "predicate": {
+                "items": "#c:tools"
+              }
+            }
+          ]
+        },
+        {
+          "function": "minecraft:set_count",
+          "count": 1,
+          "add": true,
+          "conditions": [
             {
-              "function": "minecraft:set_count",
-              "count": 1,
-              "add": true,
-              "conditions": [
-                {
-                  "condition": "deathtaxes:has_rarity"
+              "condition": "minecraft:match_tool",
+              "predicate": {
+                "components": {
+                  "minecraft:rarity": "uncommon"
                 }
-              ]
+              }
+            }
+          ]
+        },
+        {
+          "function": "minecraft:set_count",
+          "count": 2,
+          "add": true,
+          "conditions": [
+            {
+              "condition": "minecraft:match_tool",
+              "predicate": {
+                "components": {
+                  "minecraft:rarity": "rare"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "function": "minecraft:set_count",
+          "count": 3,
+          "add": true,
+          "conditions": [
+            {
+              "condition": "minecraft:match_tool",
+              "predicate": {
+                "components": {
+                  "minecraft:rarity": "epic"
+                }
+              }
+            }
+          ]
+        },
+        {
+          "function": "minecraft:set_count",
+          "count": 1,
+          "add": true,
+          "conditions": [
+            {
+              "condition": "minecraft:match_tool",
+              "predicate": {
+                "predicates": {
+                  "minecraft:enchantments": [
+                    {}
+                  ]
+                }
+              }
             }
           ]
         }
