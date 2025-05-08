@@ -8,6 +8,8 @@
 
 * Trade Inventory now sorts item highest to lowest.
 
+* Updated spawn egg texture.
+
 * Made bats despawn after a short time.
 
 * Player can no longer trade invisible Scavenger.
