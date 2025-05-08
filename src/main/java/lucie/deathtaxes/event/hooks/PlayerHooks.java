@@ -35,7 +35,7 @@ public class PlayerHooks
         // Only process drops if keep inventory is disabled and drops exist.
         if (!level.getServer().getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).get() && !drops.isEmpty())
         {
-            TagKey<Item> blacklist = ItemTags.create(DeathTaxes.withModNamespace("scavenger/blacklisted_drops"));
+            TagKey<Item> blacklist = ItemTags.create(DeathTaxes.withModNamespace("blacklisted_drops"));
 
             // Create a filtered container excluding blacklisted items.
             ItemContainerContents contents = ItemContainerContents.fromItems(drops.stream()

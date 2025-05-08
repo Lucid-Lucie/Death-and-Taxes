@@ -20,8 +20,6 @@ import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 
 public class ItemEvaluation
 {
-    private static final TagKey<Item> BLACKLIST_TAG_KEY = ItemTags.create(DeathTaxes.withModNamespace("scavenger/blacklisted_loot"));
-
     private static final ResourceKey<LootTable> LOOT_TABLE_KEY = ResourceKey.create(Registries.LOOT_TABLE, DeathTaxes.withModNamespace("gameplay/scavenger_pricing"));
 
     private static final ContextKeySet EVALUATION_KEY = new ContextKeySet.Builder()
@@ -37,9 +35,6 @@ public class ItemEvaluation
 
         for (ItemStack itemStack : contents.stream().toList())
         {
-            // Check for blacklisted items.
-            if (itemStack.is(ItemEvaluation.BLACKLIST_TAG_KEY)) continue;
-
             // Add current itemstack as tool parameter.
             LootParams lootParams = new LootParams.Builder(serverLevel)
                     .withParameter(LootContextParams.TOOL, itemStack)
