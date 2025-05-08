@@ -226,7 +226,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     @Override
     public InteractionResult mobInteract(@Nonnull Player player, @Nonnull InteractionHand hand)
     {
-        if (this.isAlive() && !this.isAngry() && this.tradingPlayer == null)
+        if (this.isAlive() && !this.isAngry() && !this.isInvisible() && this.tradingPlayer == null)
         {
             if (!this.level().isClientSide)
             {

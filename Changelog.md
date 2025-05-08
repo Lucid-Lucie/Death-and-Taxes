@@ -10,6 +10,8 @@
 
 * Made bats despawn after a short time.
 
+* Player can no longer trade invisible Scavenger.
+
 * Removed redundant loot conditions.
 
 * Fixed issue with Scavenger spawning when only blacklisted items were dropped.
