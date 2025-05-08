@@ -80,11 +80,28 @@
     ],
     "subtitle": "subtitles.deathtaxes.entity.scavenger.no"
   },
-  "entity.scavenger.teleport": {
+  "entity.scavenger.trade": {
+    "sounds": [
+      {
+        "name": "minecraft:mob/villager/haggle1",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/haggle2",
+        "pitch": 0.7
+      },
+      {
+        "name": "minecraft:mob/villager/haggle3",
+        "pitch": 0.7
+      }
+    ],
+    "subtitle": "subtitles.deathtaxes.entity.scavenger.trade"
+  },
+  "misc.teleport": {
     "sounds": [
       "mob/endermen/portal",
       "mob/endermen/portal2"
     ],
-    "subtitle": "subtitles.deathtaxes.entity.scavenger.teleport"
+    "subtitle": "subtitles.deathtaxes.misc.teleport"
   }
 }

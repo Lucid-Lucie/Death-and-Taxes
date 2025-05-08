@@ -8,6 +8,8 @@
 
 * Trade Inventory now sorts item highest to lowest.
 
+* Made bats despawn after a short time.
+
 * Removed redundant loot conditions.
 
 * Fixed issue with Scavenger spawning when only blacklisted items were dropped.

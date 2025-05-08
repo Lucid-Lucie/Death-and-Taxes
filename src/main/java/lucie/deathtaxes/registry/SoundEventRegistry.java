@@ -22,5 +22,5 @@ public class SoundEventRegistry
 
     public static final Holder<SoundEvent> SCAVENGER_TRADE = SOUND_EVENTS.register("entity.scavenger.trade", SoundEvent::createVariableRangeEvent);
 
-    public static final Holder<SoundEvent> SCAVENGER_TELEPORT = SOUND_EVENTS.register("entity.scavenger.teleport", SoundEvent::createVariableRangeEvent);
+    public static final Holder<SoundEvent> SOMETHING_TELEPORTS = SOUND_EVENTS.register("misc.teleport", SoundEvent::createVariableRangeEvent);
 }

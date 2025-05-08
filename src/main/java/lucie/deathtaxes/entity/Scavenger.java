@@ -4,6 +4,7 @@ import lucie.deathtaxes.client.state.ScavengerRenderState;
 import lucie.deathtaxes.entity.goal.TradingWithPlayerGoal;
 import lucie.deathtaxes.entity.goal.WanderToPointGoal;
 import lucie.deathtaxes.entity.goal.WatchTradingPlayerGoal;
+import lucie.deathtaxes.registry.AttachmentTypeRegistry;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import lucie.deathtaxes.registry.SoundEventRegistry;
 import net.minecraft.core.BlockPos;
@@ -29,6 +30,7 @@ import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.*;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -114,21 +116,22 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
             {
                 this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, false);
                 this.entityData.set(Scavenger.DATA_HANDS_RAISED, this.level().getGameTime() + 30);
-                this.level().broadcastEntityEvent(this, (byte) 0);
-                this.makeSound(SoundEventRegistry.SCAVENGER_TELEPORT.value());
+                this.level().broadcastEntityEvent(this, (byte) 60);
+                this.makeSound(SoundEventRegistry.SOMETHING_TELEPORTS.value());
                 this.makeSound(SoundEventRegistry.SCAVENGER_YES.value());
 
                 // Spawn two bats.
                 for (int i = 0; i < 2; i++)
                 {
-                    EntityType.BAT.spawn((ServerLevel) this.level(), this.blockPosition().above(), EntitySpawnReason.TRIGGERED);
+                    Bat bat = EntityType.BAT.spawn((ServerLevel) this.level(), this.blockPosition().above(), EntitySpawnReason.TRIGGERED);
+                    if (bat != null) bat.setData(AttachmentTypeRegistry.DESPAWN_TIME.get(), this.level().getGameTime() + 120 + (10 * i));
                 }
             }
 
             // Spawn flies.
             if (this.level().getGameTime() % 80 == 0 && this.isAlive() && !this.isInvisible())
             {
-                this.level().broadcastEntityEvent(this, (byte) 1);
+                this.level().broadcastEntityEvent(this, (byte) 0);
             }
 
             // Despawn entity if no more offers are available.
@@ -137,7 +140,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
                 this.despawn();
             }
 
-            // Despawn entity if timer has gone out.
+            // Despawn entity if the timer has gone out.
             if (this.level().getGameTime() > this.despawnDelay && tradingPlayer == null && this.despawnDelay != 0)
             {
                 this.despawn();
@@ -170,10 +173,6 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
 
         if (id == 0)
         {
-            this.makePoofParticles();
-        }
-        else if (id == 1)
-        {
             double x = this.getX() + this.random.nextDouble() * (double) 5.0F - (double) 2.5F;
             double y = this.getY() + this.random.nextDouble() * (double) 2.5F;
             double z = this.getZ() + this.random.nextDouble() * (double) 5.0F - (double) 2.5F;
@@ -205,8 +204,8 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     {
         if (!this.level().isClientSide)
         {
-            this.makeSound(SoundEventRegistry.SCAVENGER_TELEPORT.value());
-            this.level().broadcastEntityEvent(this, (byte) 0);
+            this.makeSound(SoundEventRegistry.SOMETHING_TELEPORTS.value());
+            this.level().broadcastEntityEvent(this, (byte) 60);
             this.discard();
         }
     }
