@@ -1,19 +1,23 @@
 package lucie.deathtaxes.entity;
 
 import lucie.deathtaxes.client.state.ScavengerRenderState;
+import lucie.deathtaxes.entity.goal.ShowPlayerLootGoal;
 import lucie.deathtaxes.entity.goal.TradingWithPlayerGoal;
 import lucie.deathtaxes.entity.goal.WanderToPointGoal;
 import lucie.deathtaxes.entity.goal.WatchTradingPlayerGoal;
 import lucie.deathtaxes.registry.AttachmentTypeRegistry;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import lucie.deathtaxes.registry.SoundEventRegistry;
+import net.minecraft.client.renderer.item.ItemModelResolver;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
@@ -33,6 +37,7 @@ import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.trading.Merchant;
@@ -70,6 +75,8 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
 
     public static final EntityDataAccessor<Boolean> DATA_DRAMATIC_ENTRANCE = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.BOOLEAN);
 
+    public static final EntityDataAccessor<ItemStack> DATA_DISPLAY_ITEM = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.ITEM_STACK);
+
     public Scavenger(EntityType<? extends PathfinderMob> entityType, Level level)
     {
         super(entityType, level);
@@ -91,6 +98,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     {
         this.goalSelector.addGoal(1, new TradingWithPlayerGoal(this));
         this.goalSelector.addGoal(1, new WatchTradingPlayerGoal(this));
+        this.goalSelector.addGoal(1, new ShowPlayerLootGoal(this));
         this.goalSelector.addGoal(2, new WanderToPointGoal(this, 2.0D, 0.75D));
         this.goalSelector.addGoal(3, new HurtByTargetGoal(this));
         this.goalSelector.addGoal(5, new MeleeAttackGoal(this, 1.0, true));
@@ -196,6 +204,16 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
             this.entityData.set(Scavenger.DATA_UNHAPPY_COUNTER, this.level().getGameTime() + 40);
             this.makeSound(SoundEventRegistry.SCAVENGER_NO.value());
         }
+    }
+
+    public ItemStack getDisplayItem()
+    {
+        return this.entityData.get(Scavenger.DATA_DISPLAY_ITEM);
+    }
+
+    public void setDisplayItem(ItemStack itemStack)
+    {
+        this.entityData.set(Scavenger.DATA_DISPLAY_ITEM, itemStack);
     }
 
     public void despawn()
@@ -316,32 +334,41 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         builder.define(Scavenger.DATA_HANDS_RAISED, 0L);
         builder.define(Scavenger.DATA_UNHAPPY_COUNTER, 0L);
         builder.define(Scavenger.DATA_DRAMATIC_ENTRANCE, false);
+        builder.define(Scavenger.DATA_DISPLAY_ITEM, ItemStack.EMPTY);
     }
 
     @Override
     public void addAdditionalSaveData(@Nonnull CompoundTag compoundTag)
     {
         super.addAdditionalSaveData(compoundTag);
+
+        RegistryOps<Tag> registryops = this.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+
         this.addPersistentAngerSaveData(compoundTag);
         compoundTag.putLong("UnhappyCounter", this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER));
         compoundTag.putLong("HandsRaised", this.entityData.get(Scavenger.DATA_HANDS_RAISED));
         compoundTag.putBoolean("DramaticEntrance", this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE));
+        compoundTag.store("DisplayItem", ItemStack.OPTIONAL_CODEC, registryops, this.entityData.get(Scavenger.DATA_DISPLAY_ITEM));
         compoundTag.putLong("DespawnDelay", this.despawnDelay);
         compoundTag.storeNullable("HomePosition", BlockPos.CODEC, this.homePosition);
-        compoundTag.storeNullable("MerchantOffers", MerchantOffers.CODEC, this.registryAccess().createSerializationContext(NbtOps.INSTANCE), this.merchantOffers);
+        compoundTag.storeNullable("MerchantOffers", MerchantOffers.CODEC, registryops, this.merchantOffers);
     }
 
     @Override
     public void readAdditionalSaveData(@Nonnull CompoundTag compoundTag)
     {
         super.readAdditionalSaveData(compoundTag);
+
+        RegistryOps<Tag> registryops = this.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+
         this.readPersistentAngerSaveData(this.level(), compoundTag);
         this.entityData.set(Scavenger.DATA_UNHAPPY_COUNTER, compoundTag.getLongOr("UnhappyCounter", 0L));
         this.entityData.set(Scavenger.DATA_HANDS_RAISED, compoundTag.getLongOr("HandsRaised", 0L));
         this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, compoundTag.getBooleanOr("DramaticEntrance", false));
+        this.entityData.set(Scavenger.DATA_DISPLAY_ITEM, compoundTag.read("DisplayItem", ItemStack.OPTIONAL_CODEC, registryops).orElse(ItemStack.EMPTY));
         this.despawnDelay = compoundTag.getLongOr("DespawnDelay", 0L);
         this.homePosition = compoundTag.read("HomePosition", BlockPos.CODEC).orElse(null);
-        this.merchantOffers = compoundTag.read("MerchantOffers", MerchantOffers.CODEC, this.registryAccess().createSerializationContext(NbtOps.INSTANCE)).orElse(null);
+        this.merchantOffers = compoundTag.read("MerchantOffers", MerchantOffers.CODEC, registryops).orElse(null);
     }
 
     /* Merchant */

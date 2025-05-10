@@ -20,4 +20,8 @@
 
 * Fixed issue with enchanted items not being stored correctly.
 
+**1.2.0**
+
+* Scavenger now displays trades if player has matching cost item.
+
 

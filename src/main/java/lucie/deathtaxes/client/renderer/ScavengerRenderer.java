@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
 import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemDisplayContext;
 
 import javax.annotation.Nonnull;
 
@@ -19,6 +20,7 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerRenderSta
     public ScavengerRenderer(EntityRendererProvider.Context context)
     {
         super(context, new ScavengerModel<>(context.bakeLayer(ScavengerModel.LAYER_LOCATION)), 0.5F);
+        this.addLayer(new DisplayItemArmLayer(this));
         this.addLayer(new ItemInHandLayer<>(this)
         {
             @Override
@@ -51,6 +53,7 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerRenderSta
     {
         super.extractRenderState(scavenger, renderState, partialTick);
         ArmedEntityRenderState.extractArmedEntityRenderState(scavenger, renderState, this.itemModelResolver);
+        this.itemModelResolver.updateForLiving(renderState.displayItem, scavenger.getDisplayItem(), ItemDisplayContext.GROUND, scavenger);
         scavenger.setRenderState(renderState, partialTick);
     }
 

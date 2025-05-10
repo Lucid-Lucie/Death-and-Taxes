@@ -71,18 +71,18 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
         this.head.yRot = renderState.yRot * (float) (Math.PI / 180.0);
 
         // Walking animation.
-        float f = renderState.walkAnimationSpeed;
-        float f1 = renderState.walkAnimationPos;
-        this.rightArm.xRot = Mth.cos(f1 * 0.6662F + 3.1415927F) * 2.0F * f * 0.5F;
+        float wSpeed = renderState.walkAnimationSpeed;
+        float wPos = renderState.walkAnimationPos;
+        this.rightArm.xRot = Mth.cos(wPos * 0.6662F + 3.1415927F) * 2.0F * wSpeed * 0.5F;
         this.rightArm.yRot = 0.0F;
         this.rightArm.zRot = 0.0F;
-        this.leftArm.xRot = Mth.cos(f1 * 0.6662F) * 2.0F * f * 0.5F;
+        this.leftArm.xRot = Mth.cos(wPos * 0.6662F) * 2.0F * wSpeed * 0.5F;
         this.leftArm.yRot = 0.0F;
         this.leftArm.zRot = 0.0F;
-        this.rightLeg.xRot = Mth.cos(f1 * 0.6662F) * 1.4F * f * 0.5F;
+        this.rightLeg.xRot = Mth.cos(wPos * 0.6662F) * 1.4F * wSpeed * 0.5F;
         this.rightLeg.yRot = 0.0F;
         this.rightLeg.zRot = 0.0F;
-        this.leftLeg.xRot = Mth.cos(f1 * 0.6662F + 3.1415927F) * 1.4F * f * 0.5F;
+        this.leftLeg.xRot = Mth.cos(wPos * 0.6662F + 3.1415927F) * 1.4F * wSpeed * 0.5F;
         this.leftLeg.yRot = 0.0F;
         this.leftLeg.zRot = 0.0F;
 
@@ -131,7 +131,21 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
             this.rightArm.visible = false;
             this.crossedArms.visible = true;
             this.crossedArms.xRot = (float) Math.toRadians(-45);
+
+            // Render crossed arm swing.
+            if (renderState.attackAnim > 0)
+            {
+                float swingPower = -Mth.sin((float) (renderState.attackAnim * Math.PI));
+                float recoilPower = -Mth.sin((float) ((1.0F - (1.0F - renderState.attackAnim) * (1.0F - renderState.attackAnim)) * Math.PI));
+                this.crossedArms.xRot += swingPower * 0.8F - recoilPower * 0.15F;
+            }
         }
+    }
+
+    public void translateToArms(PoseStack poseStack)
+    {
+        this.root.translateAndRotate(poseStack);
+        this.crossedArms.translateAndRotate(poseStack);
     }
 
     @Override
