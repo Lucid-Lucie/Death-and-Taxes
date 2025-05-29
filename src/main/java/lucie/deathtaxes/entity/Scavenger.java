@@ -46,7 +46,6 @@ import net.minecraft.world.level.ServerLevelAccessor;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.Optional;
 import java.util.UUID;
 
 public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
@@ -81,7 +80,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         this.xpReward = 10;
     }
 
-    public static AttributeSupplier attributes()
+    public static AttributeSupplier registerAttributes()
     {
         return Monster.createMonsterAttributes()
                 .add(Attributes.MOVEMENT_SPEED, 0.35F)
@@ -89,6 +88,16 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
                 .add(Attributes.MAX_HEALTH, 24.0F)
                 .add(Attributes.ATTACK_DAMAGE, 0.5F)
                 .build();
+    }
+
+    public void registerRenderState(ScavengerRenderState renderState, float partialTick)
+    {
+        renderState.mainArm = this.getMainArm();
+        renderState.attackAnim = this.getAttackAnim(partialTick);
+        renderState.isAggressive = this.isAngry();
+        renderState.isDramatic = this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE);
+        renderState.isUnhappy = this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER) > this.level().getGameTime();
+        renderState.isHandsRaised = this.entityData.get(Scavenger.DATA_HANDS_RAISED) > this.level().getGameTime();
     }
 
     @Override
@@ -102,8 +111,35 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         this.goalSelector.addGoal(5, new MeleeAttackGoal(this, 1.0, true));
         this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.75));
         this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
-        this.goalSelector.addGoal(10, new LookAtPlayerGoal(this, Player.class, 8.0F));
+        this.goalSelector.addGoal(9, new InteractGoal(this, Player.class, 3.0F, 1.0F));
         this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
+    }
+
+    @Override
+    protected void customServerAiStep(ServerLevel level)
+    {
+        this.updatePersistentAnger(level, true);
+
+        // Make dramatic entrance.
+        if (!this.hasEffect(MobEffects.INVISIBILITY) && this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE) && this.isAlive())
+        {
+            this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, false);
+            this.entityData.set(Scavenger.DATA_HANDS_RAISED, this.level().getGameTime() + 30);
+            this.level().broadcastEntityEvent(this, (byte) 60);
+            this.makeSound(SoundEventRegistry.SOMETHING_TELEPORTS.value());
+            this.makeSound(SoundEventRegistry.SCAVENGER_YES.value());
+
+            // Spawn two bats.
+            for (int i = 0; i < 2; i++)
+            {
+                Bat bat = EntityType.BAT.spawn(level, this.blockPosition().above(), EntitySpawnReason.TRIGGERED);
+                if (bat != null)
+                {
+                    bat.setData(AttachmentTypeRegistry.DESPAWN_TIME.get(), this.level().getGameTime() + 120 + (10 * i));
+                    bat.restrictTo(this.blockPosition(), 16);
+                }
+            }
+        }
     }
 
     @Override
@@ -112,62 +148,6 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         super.aiStep();
 
         this.updateSwingTime();
-
-        if (!this.level().isClientSide)
-        {
-            this.updatePersistentAnger((ServerLevel) this.level(), true);
-
-            // Make dramatic entrance.
-            if (!this.hasEffect(MobEffects.INVISIBILITY) && this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE) && this.isAlive())
-            {
-                this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, false);
-                this.entityData.set(Scavenger.DATA_HANDS_RAISED, this.level().getGameTime() + 30);
-                this.level().broadcastEntityEvent(this, (byte) 60);
-                this.makeSound(SoundEventRegistry.SOMETHING_TELEPORTS.value());
-                this.makeSound(SoundEventRegistry.SCAVENGER_YES.value());
-
-                // Spawn two bats.
-                for (int i = 0; i < 2; i++)
-                {
-                    Bat bat = EntityType.BAT.spawn((ServerLevel) this.level(), this.blockPosition().above(), EntitySpawnReason.TRIGGERED);
-                    if (bat != null)
-                    {
-                        bat.setData(AttachmentTypeRegistry.DESPAWN_TIME.get(), this.level().getGameTime() + 120 + (10 * i));
-                        bat.restrictTo(this.blockPosition(), 16);
-                    }
-                }
-            }
-
-            // Despawn entity if no more offers are available.
-            if (this.merchantOffers != null && this.merchantOffers.stream().allMatch(MerchantOffer::isOutOfStock) && tradingPlayer == null)
-            {
-                this.despawn();
-            }
-
-            // Despawn entity if the timer has gone out.
-            if (this.level().getGameTime() > this.despawnDelay && tradingPlayer == null && this.despawnDelay != 0)
-            {
-                this.despawn();
-            }
-        }
-    }
-
-    @Override
-    public void tick()
-    {
-        super.tick();
-
-        // Check if the entity is still unhappy.
-        Optional.of(this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER))
-                .filter(time -> time > 0)
-                .filter(time -> this.level().getGameTime() > time)
-                .ifPresent(time -> this.entityData.set(Scavenger.DATA_UNHAPPY_COUNTER, 0L));
-
-        // Check if the entity is still raising hands.
-        Optional.of(this.entityData.get(Scavenger.DATA_HANDS_RAISED))
-                .filter(time -> time > 0)
-                .filter(time -> this.level().getGameTime() > time)
-                .ifPresent(time -> this.entityData.set(Scavenger.DATA_HANDS_RAISED, 0L));
     }
 
     @Override
@@ -191,19 +171,11 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         return !MobEffects.WITHER.equals(effectInstance.getEffect()) && super.canBeAffected(effectInstance);
     }
 
-    public void setRenderState(ScavengerRenderState renderState, float partialTick)
-    {
-        renderState.mainArm = this.getMainArm();
-        renderState.attackAnim = this.getAttackAnim(partialTick);
-        renderState.isAggressive = this.isAngry();
-        renderState.isDramatic = this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE);
-        renderState.isUnhappy = this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER) > this.level().getGameTime();
-        renderState.isHandsRaised = this.entityData.get(Scavenger.DATA_HANDS_RAISED) > this.level().getGameTime();
-    }
-
     public void setUnhappy()
     {
-        if (this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER) == 0)
+        long time = this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER);
+
+        if (this.level().getGameTime() > time)
         {
             this.ambientSoundTime = 0;
             this.entityData.set(Scavenger.DATA_UNHAPPY_COUNTER, this.level().getGameTime() + 40);
@@ -221,28 +193,48 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         this.entityData.set(Scavenger.DATA_DISPLAY_ITEM, itemStack);
     }
 
-    public void despawn()
+    @Override
+    public boolean requiresCustomPersistence()
     {
-        if (!this.level().isClientSide)
+        return (this.merchantOffers != null && !this.merchantOffers.isEmpty()) || super.requiresCustomPersistence();
+    }
+
+    @Override
+    public void checkDespawn()
+    {
+        if (this.requiresCustomPersistence())
         {
-            this.makeSound(SoundEventRegistry.SOMETHING_TELEPORTS.value());
-            this.level().broadcastEntityEvent(this, (byte) 60);
-            this.discard();
+            // Despawn entity if no more trades are available or if the despawn timer has run out.
+            boolean shouldDespawn = (this.merchantOffers != null && this.merchantOffers.stream().allMatch(MerchantOffer::isOutOfStock)) || (this.despawnDelay != 0 && this.level().getGameTime() > this.despawnDelay);
+
+            // Don't despawn while trading.
+            if (shouldDespawn && tradingPlayer == null)
+            {
+                this.makeSound(SoundEventRegistry.SOMETHING_TELEPORTS.value());
+                this.level().broadcastEntityEvent(this, (byte) 60);
+                this.discard();
+                return;
+            }
         }
+
+        super.checkDespawn();
     }
 
     @Override
     public boolean doHurtTarget(@Nonnull ServerLevel serverLevel, @Nonnull Entity entity)
     {
-        boolean flag = super.doHurtTarget(serverLevel, entity);
-
-        if (flag && entity instanceof LivingEntity livingEntity)
+        if (super.doHurtTarget(serverLevel, entity))
         {
-            float duration = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
-            livingEntity.addEffect(new MobEffectInstance(MobEffects.WITHER, 140 * (int) duration), this);
+            if (entity instanceof LivingEntity livingEntity)
+            {
+                float duration = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
+                livingEntity.addEffect(new MobEffectInstance(MobEffects.WITHER, 140 * (int) duration), this);
+            }
+
+            return true;
         }
 
-        return flag;
+        return false;
     }
 
     @Nonnull

@@ -32,7 +32,7 @@ public class CommonEvent
     @SubscribeEvent
     public static void onEntityAttributeCreation(EntityAttributeCreationEvent event)
     {
-        event.put(EntityTypeRegistry.SCAVENGER.value(), Scavenger.attributes());
+        event.put(EntityTypeRegistry.SCAVENGER.value(), Scavenger.registerAttributes());
     }
 
     @SubscribeEvent

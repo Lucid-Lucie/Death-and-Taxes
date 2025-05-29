@@ -54,7 +54,7 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerRenderSta
         super.extractRenderState(scavenger, renderState, partialTick);
         ArmedEntityRenderState.extractArmedEntityRenderState(scavenger, renderState, this.itemModelResolver);
         this.itemModelResolver.updateForLiving(renderState.displayItem, scavenger.getDisplayItem(), ItemDisplayContext.GROUND, scavenger);
-        scavenger.setRenderState(renderState, partialTick);
+        scavenger.registerRenderState(renderState, partialTick);
     }
 
     @Override
