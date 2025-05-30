@@ -5,10 +5,6 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.tags.TagKey;
-import net.minecraft.util.context.ContextKeySet;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.component.ItemContainerContents;
 import net.minecraft.world.item.trading.ItemCost;
@@ -16,13 +12,14 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.LootTable;
+import net.minecraft.world.level.storage.loot.parameters.LootContextParamSet;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 
 public class ItemEvaluation
 {
     private static final ResourceKey<LootTable> LOOT_TABLE_KEY = ResourceKey.create(Registries.LOOT_TABLE, DeathTaxes.withModNamespace("gameplay/scavenger_pricing"));
 
-    private static final ContextKeySet EVALUATION_KEY = new ContextKeySet.Builder()
+    private static final LootContextParamSet EVALUATION_KEY = new LootContextParamSet.Builder()
             .required(LootContextParams.TOOL)
             .optional(LootContextParams.ORIGIN)
             .optional(LootContextParams.THIS_ENTITY)

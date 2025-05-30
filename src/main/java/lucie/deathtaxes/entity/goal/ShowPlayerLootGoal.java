@@ -3,6 +3,7 @@ package lucie.deathtaxes.entity.goal;
 import com.google.common.collect.Lists;
 import lucie.deathtaxes.entity.Scavenger;
 import lucie.deathtaxes.registry.SoundEventRegistry;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
@@ -32,7 +33,10 @@ public class ShowPlayerLootGoal extends LookAtPlayerGoal
     @Override
     public boolean canUse()
     {
-        this.lookAt = getServerLevel(this.scavenger).getNearestPlayer(this.scavenger, 16.0D);
+        if (this.scavenger.level() instanceof ServerLevel serverLevel)
+        {
+            this.lookAt = serverLevel.getNearestPlayer(this.scavenger, 16.0D);
+        }
 
         return this.lookAt != null && this.lookAt.isAlive() && this.scavenger.isAlive() && !this.scavenger.isAngry() && this.scavenger.getTradingPlayer() == null;
     }

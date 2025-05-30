@@ -1,12 +1,10 @@
 package lucie.deathtaxes.client.model;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import lucie.deathtaxes.DeathTaxes;
-import lucie.deathtaxes.client.state.ScavengerRenderState;
-import net.minecraft.client.model.AnimationUtils;
-import net.minecraft.client.model.ArmedModel;
-import net.minecraft.client.model.EntityModel;
-import net.minecraft.client.model.HeadedModel;
+import lucie.deathtaxes.entity.Scavenger;
+import net.minecraft.client.model.*;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
@@ -16,22 +14,21 @@ import net.minecraft.world.entity.HumanoidArm;
 
 import javax.annotation.Nonnull;
 
-public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<S> implements ArmedModel, HeadedModel
+public class ScavengerModel extends HierarchicalModel<Scavenger> implements ArmedModel, HeadedModel
 {
     public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(DeathTaxes.withModNamespace("scavenger"), "main");
 
-    private final ModelPart head, crossedArms, rightArm, leftArm, rightLeg, leftLeg;
+    private final ModelPart root, head, crossedArms, rightArm, leftArm, rightLeg, leftLeg;
 
     public ScavengerModel(ModelPart root)
     {
-        super(root);
+        this.root = root;
         this.head = root.getChild("head");
         this.crossedArms = root.getChild("crossed_arms");
         this.rightArm = root.getChild("right_arm");
         this.leftArm = root.getChild("left_arm");
         this.rightLeg = root.getChild("right_leg");
         this.leftLeg = root.getChild("left_leg");
-
     }
 
     public static LayerDefinition createBodyLayer()
@@ -63,52 +60,55 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
         return LayerDefinition.create(meshdefinition, 64, 64);
     }
 
+
+
+
     @Override
-    public void setupAnim(@Nonnull S renderState)
+    public void setupAnim(@Nonnull Scavenger scavenger, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch)
     {
         // Looking directions.
-        this.head.xRot = renderState.xRot * (float) (Math.PI / 180.0);
-        this.head.yRot = renderState.yRot * (float) (Math.PI / 180.0);
+        this.head.yRot = netHeadYaw * ((float)Math.PI / 180F);
+        this.head.xRot = headPitch * ((float)Math.PI / 180F);
 
         // Walking animation.
-        float wSpeed = renderState.walkAnimationSpeed;
-        float wPos = renderState.walkAnimationPos;
-        this.rightArm.xRot = Mth.cos(wPos * 0.6662F + 3.1415927F) * 2.0F * wSpeed * 0.5F;
+        this.rightArm.xRot = Mth.cos(limbSwing * 0.6662F + (float)Math.PI) * 2.0F * limbSwingAmount * 0.5F;
         this.rightArm.yRot = 0.0F;
         this.rightArm.zRot = 0.0F;
-        this.leftArm.xRot = Mth.cos(wPos * 0.6662F) * 2.0F * wSpeed * 0.5F;
+        this.leftArm.xRot = Mth.cos(limbSwing * 0.6662F) * 2.0F * limbSwingAmount * 0.5F;
         this.leftArm.yRot = 0.0F;
         this.leftArm.zRot = 0.0F;
-        this.rightLeg.xRot = Mth.cos(wPos * 0.6662F) * 1.4F * wSpeed * 0.5F;
+        this.rightLeg.xRot = Mth.cos(limbSwing * 0.6662F) * 1.4F * limbSwingAmount * 0.5F;
         this.rightLeg.yRot = 0.0F;
         this.rightLeg.zRot = 0.0F;
-        this.leftLeg.xRot = Mth.cos(wPos * 0.6662F + 3.1415927F) * 1.4F * wSpeed * 0.5F;
+        this.leftLeg.xRot = Mth.cos(limbSwing * 0.6662F + (float)Math.PI) * 1.4F * limbSwingAmount * 0.5F;
         this.leftLeg.yRot = 0.0F;
         this.leftLeg.zRot = 0.0F;
 
         // Shaking head.
-        if (renderState.isUnhappy)
+        if (scavenger.getEntityData().get(Scavenger.DATA_UNHAPPY_COUNTER) > scavenger.level().getGameTime())
         {
-            this.head.yRot += 0.3F * Mth.sin(0.45F * renderState.ageInTicks);
+            this.head.yRot += 0.3F * Mth.sin(0.45F * ageInTicks);
             this.head.xRot = 0.2F;
         }
 
+        boolean isAggressive = scavenger.isAggressive();
+
         // Render either crossed or normal arms.
-        if (renderState.isAggressive || renderState.isHandsRaised)
+        if (scavenger.isAngry() || scavenger.getEntityData().get(Scavenger.DATA_HANDS_RAISED) > scavenger.level().getGameTime())
         {
             this.leftArm.visible = true;
             this.rightArm.visible = true;
             this.crossedArms.visible = false;
 
-            if (renderState.isAggressive)
+            if (scavenger.isAngry())
             {
-                if (renderState.getMainHandItem().isEmpty())
+                if (scavenger.getMainHandItem().isEmpty())
                 {
-                    AnimationUtils.animateZombieArms(this.leftArm, this.rightArm, true, renderState.attackAnim, renderState.ageInTicks);
+                    AnimationUtils.animateZombieArms(this.leftArm, this.rightArm, true, this.attackTime, ageInTicks);
                 }
                 else
                 {
-                    AnimationUtils.swingWeaponDown(this.rightArm, this.leftArm, renderState.mainArm, renderState.attackAnim, renderState.ageInTicks);
+                    AnimationUtils.swingWeaponDown(this.rightArm, this.leftArm, scavenger, this.attackTime, ageInTicks);
                 }
             }
             else
@@ -117,8 +117,8 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
                 this.rightArm.x = -5.0F;
                 this.leftArm.z = 0.0F;
                 this.leftArm.x = 5.0F;
-                this.rightArm.xRot = Mth.cos(renderState.ageInTicks * 0.6662F) * 0.25F;
-                this.leftArm.xRot = Mth.cos(renderState.ageInTicks * 0.6662F) * 0.25F;
+                this.rightArm.xRot = Mth.cos(ageInTicks * 0.6662F) * 0.25F;
+                this.leftArm.xRot = Mth.cos(ageInTicks * 0.6662F) * 0.25F;
                 this.rightArm.zRot = 2.3561945F;
                 this.leftArm.zRot = -2.3561945F;
                 this.rightArm.yRot = 0.0F;
@@ -133,10 +133,10 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
             this.crossedArms.xRot = (float) Math.toRadians(-45);
 
             // Render crossed arm swing.
-            if (renderState.attackAnim > 0)
+            if (this.attackTime > 0)
             {
-                float swingPower = -Mth.sin((float) (renderState.attackAnim * Math.PI));
-                float recoilPower = -Mth.sin((float) ((1.0F - (1.0F - renderState.attackAnim) * (1.0F - renderState.attackAnim)) * Math.PI));
+                float swingPower = -Mth.sin((float) (this.attackTime * Math.PI));
+                float recoilPower = -Mth.sin((float) ((1.0F - (1.0F - this.attackTime) * (1.0F - this.attackTime)) * Math.PI));
                 this.crossedArms.xRot += swingPower * 0.8F - recoilPower * 0.15F;
             }
         }
@@ -168,5 +168,11 @@ public class ScavengerModel<S extends ScavengerRenderState> extends EntityModel<
     public ModelPart getHead()
     {
         return this.head;
+    }
+
+    @Override
+    public ModelPart root()
+    {
+        return this.root;
     }
 }

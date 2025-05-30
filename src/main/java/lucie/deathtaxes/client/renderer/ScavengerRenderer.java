@@ -3,32 +3,29 @@ package lucie.deathtaxes.client.renderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import lucie.deathtaxes.DeathTaxes;
 import lucie.deathtaxes.client.model.ScavengerModel;
-import lucie.deathtaxes.client.state.ScavengerRenderState;
 import lucie.deathtaxes.entity.Scavenger;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
 import net.minecraft.client.renderer.entity.layers.ItemInHandLayer;
-import net.minecraft.client.renderer.entity.state.ArmedEntityRenderState;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemDisplayContext;
 
 import javax.annotation.Nonnull;
 
-public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerRenderState, ScavengerModel<ScavengerRenderState>>
+public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerModel>
 {
     public ScavengerRenderer(EntityRendererProvider.Context context)
     {
-        super(context, new ScavengerModel<>(context.bakeLayer(ScavengerModel.LAYER_LOCATION)), 0.5F);
-        this.addLayer(new DisplayItemArmLayer(this));
-        this.addLayer(new ItemInHandLayer<>(this)
+        super(context, new ScavengerModel(context.bakeLayer(ScavengerModel.LAYER_LOCATION)), 0.5F);
+        this.addLayer(new DisplayItemArmLayer(this, context.getItemInHandRenderer()));
+        this.addLayer(new ItemInHandLayer<>(this, context.getItemInHandRenderer())
         {
             @Override
-            public void render(@Nonnull PoseStack poseStack, @Nonnull MultiBufferSource multiBufferSource, int packedLight, @Nonnull ScavengerRenderState renderState, float xRot, float yRot)
+            public void render(@Nonnull PoseStack poseStack, @Nonnull MultiBufferSource buffer, int packedLight, @Nonnull Scavenger scavenger, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch)
             {
-                if (renderState.isAggressive)
+                if (scavenger.isAggressive())
                 {
-                    super.render(poseStack, multiBufferSource, packedLight, renderState, xRot, yRot);
+                    super.render(poseStack, buffer, packedLight, scavenger, limbSwing, limbSwingAmount, partialTicks, ageInTicks, netHeadYaw, headPitch);
                 }
             }
         });
@@ -36,33 +33,17 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerRenderSta
 
     @Nonnull
     @Override
-    public ResourceLocation getTextureLocation(@Nonnull ScavengerRenderState renderState)
+    public ResourceLocation getTextureLocation(@Nonnull Scavenger scavenger)
     {
         return DeathTaxes.withModNamespace("textures/entity/scavenger.png");
     }
 
-    @Nonnull
     @Override
-    public ScavengerRenderState createRenderState()
+    public void render(@Nonnull Scavenger scavenger, float entityYaw, float partialTicks, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource buffer, int packedLight)
     {
-        return new ScavengerRenderState();
-    }
-
-    @Override
-    public void extractRenderState(@Nonnull Scavenger scavenger, @Nonnull ScavengerRenderState renderState, float partialTick)
-    {
-        super.extractRenderState(scavenger, renderState, partialTick);
-        ArmedEntityRenderState.extractArmedEntityRenderState(scavenger, renderState, this.itemModelResolver);
-        this.itemModelResolver.updateForLiving(renderState.displayItem, scavenger.getDisplayItem(), ItemDisplayContext.GROUND, scavenger);
-        scavenger.registerRenderState(renderState, partialTick);
-    }
-
-    @Override
-    public void render(@Nonnull ScavengerRenderState renderState, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource bufferSource, int packedLight)
-    {
-        if (!renderState.isDramatic)
+        if (!scavenger.getEntityData().get(Scavenger.DATA_DRAMATIC_ENTRANCE))
         {
-            super.render(renderState, poseStack, bufferSource, packedLight);
+            super.render(scavenger, entityYaw, partialTicks, poseStack, buffer, packedLight);
         }
     }
 }

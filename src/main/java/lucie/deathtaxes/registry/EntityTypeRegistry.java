@@ -18,5 +18,5 @@ public class EntityTypeRegistry
             .passengerAttachments(2.0F)
             .ridingOffset(-0.6F)
             .clientTrackingRange(8)
-            .build(ResourceKey.create(Registries.ENTITY_TYPE, location)));
+            .build(location.toString()));
 }

@@ -12,6 +12,6 @@ public class ItemRegistry
 {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.createItems(DeathTaxes.MODID);
 
-    public static final Holder<Item> SCAVENGER_SPAWN_EGG = ITEMS.register("scavenger_spawn_egg", location -> new SpawnEggItem(EntityTypeRegistry.SCAVENGER.value(), new Item.Properties()
-            .setId(ResourceKey.create(Registries.ITEM, location))));
+
+    public static final Holder<Item> SCAVENGER_SPAWN_EGG = ITEMS.register("scavenger_spawn_egg", location -> new SpawnEggItem(EntityTypeRegistry.SCAVENGER.value(), 0xFFFFFF, 0xFFFFFF, new Item.Properties()));
 }
