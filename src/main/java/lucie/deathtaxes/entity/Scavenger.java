@@ -10,13 +10,9 @@ import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import lucie.deathtaxes.registry.SoundEventRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.Tag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
-import net.minecraft.resources.RegistryOps;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
@@ -43,6 +39,8 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.level.storage.ValueInput;
+import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -116,7 +114,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     }
 
     @Override
-    protected void customServerAiStep(ServerLevel level)
+    protected void customServerAiStep(@Nonnull ServerLevel level)
     {
         this.updatePersistentAnger(level, true);
 
@@ -136,7 +134,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
                 if (bat != null)
                 {
                     bat.setData(AttachmentTypeRegistry.DESPAWN_TIME.get(), this.level().getGameTime() + 120 + (10 * i));
-                    bat.restrictTo(this.blockPosition(), 16);
+                    bat.setHomeTo(this.blockPosition(), 16);
                 }
             }
         }
@@ -308,7 +306,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         if (spawnReason == EntitySpawnReason.TRIGGERED)
         {
             this.despawnDelay = this.level().getGameTime() + 28000;
-            this.restrictTo(this.blockPosition(), 16);
+            this.setHomeTo(this.blockPosition(), 16);
             this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, true);
             this.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 80));
         }
@@ -335,31 +333,29 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     }
 
     @Override
-    public void addAdditionalSaveData(@Nonnull CompoundTag compoundTag)
+    protected void addAdditionalSaveData(@Nonnull ValueOutput output)
     {
-        super.addAdditionalSaveData(compoundTag);
-        RegistryOps<Tag> registryops = this.registryAccess().createSerializationContext(NbtOps.INSTANCE);
-        this.addPersistentAngerSaveData(compoundTag);
-        compoundTag.putLong("UnhappyCounter", this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER));
-        compoundTag.putLong("HandsRaised", this.entityData.get(Scavenger.DATA_HANDS_RAISED));
-        compoundTag.putBoolean("DramaticEntrance", this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE));
-        compoundTag.putLong("DespawnDelay", this.despawnDelay);
-        compoundTag.storeNullable("HomePosition", BlockPos.CODEC, this.homePosition);
-        compoundTag.storeNullable("MerchantOffers", MerchantOffers.CODEC, registryops, this.merchantOffers);
+        super.addAdditionalSaveData(output);
+        this.addPersistentAngerSaveData(output);
+        output.putLong("UnhappyCounter", this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER));
+        output.putLong("HandsRaised", this.entityData.get(Scavenger.DATA_HANDS_RAISED));
+        output.putBoolean("DramaticEntrance", this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE));
+        output.putLong("DespawnDelay", this.despawnDelay);
+        output.storeNullable("HomePosition", BlockPos.CODEC, this.homePosition);
+        output.storeNullable("MerchantOffers", MerchantOffers.CODEC, this.merchantOffers);
     }
 
     @Override
-    public void readAdditionalSaveData(@Nonnull CompoundTag compoundTag)
+    protected void readAdditionalSaveData(@Nonnull ValueInput output)
     {
-        super.readAdditionalSaveData(compoundTag);
-        RegistryOps<Tag> registryops = this.registryAccess().createSerializationContext(NbtOps.INSTANCE);
-        this.readPersistentAngerSaveData(this.level(), compoundTag);
-        this.entityData.set(Scavenger.DATA_UNHAPPY_COUNTER, compoundTag.getLongOr("UnhappyCounter", 0L));
-        this.entityData.set(Scavenger.DATA_HANDS_RAISED, compoundTag.getLongOr("HandsRaised", 0L));
-        this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, compoundTag.getBooleanOr("DramaticEntrance", false));
-        this.despawnDelay = compoundTag.getLongOr("DespawnDelay", 0L);
-        this.homePosition = compoundTag.read("HomePosition", BlockPos.CODEC).orElse(null);
-        this.merchantOffers = compoundTag.read("MerchantOffers", MerchantOffers.CODEC, registryops).orElse(null);
+        super.readAdditionalSaveData(output);
+        this.readPersistentAngerSaveData(this.level(), output);
+        this.entityData.set(Scavenger.DATA_UNHAPPY_COUNTER, output.getLongOr("UnhappyCounter", 0L));
+        this.entityData.set(Scavenger.DATA_HANDS_RAISED, output.getLongOr("HandsRaised", 0L));
+        this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, output.getBooleanOr("DramaticEntrance", false));
+        this.despawnDelay = output.getLongOr("DespawnDelay", 0L);
+        this.homePosition = output.read("HomePosition", BlockPos.CODEC).orElse(null);
+        this.merchantOffers = output.read("MerchantOffers", MerchantOffers.CODEC).orElse(null);
     }
 
     /* Merchant */
