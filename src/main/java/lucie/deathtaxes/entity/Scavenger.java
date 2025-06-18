@@ -480,4 +480,10 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     {
         this.setRemainingPersistentAngerTime(TimeUtil.rangeOfSeconds(20, 39).sample(this.random));
     }
+
+    @Override
+    public boolean canBeLeashed()
+    {
+        return false;
+    }
 }

@@ -14,4 +14,5 @@
 **1.2.0**
 * Scavenger now displays trades if player has matching cost item.
 * Withering no longer affects scavenger.
+* Scavenger can no longer be leashed.
 
