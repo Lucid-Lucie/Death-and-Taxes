@@ -18,3 +18,4 @@
 
 **1.3.0**
 * Made Scavenger use Behavior instead of Goals.
+* Added more ambiance.
