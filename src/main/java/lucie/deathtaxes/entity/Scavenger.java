@@ -1,14 +1,13 @@
 package lucie.deathtaxes.entity;
 
+import com.google.common.collect.ImmutableList;
+import com.mojang.serialization.Dynamic;
 import lucie.deathtaxes.client.state.ScavengerRenderState;
-import lucie.deathtaxes.entity.goal.ShowPlayerLootGoal;
-import lucie.deathtaxes.entity.goal.TradingWithPlayerGoal;
-import lucie.deathtaxes.entity.goal.WanderToPointGoal;
-import lucie.deathtaxes.entity.goal.WatchTradingPlayerGoal;
 import lucie.deathtaxes.registry.AttachmentTypeRegistry;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import lucie.deathtaxes.registry.SoundEventRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.GlobalPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -16,7 +15,8 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.TimeUtil;
+import net.minecraft.util.profiling.Profiler;
+import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -24,11 +24,12 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
+import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.entity.ai.goal.*;
-import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
-import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
+import net.minecraft.world.entity.ai.sensing.Sensor;
+import net.minecraft.world.entity.ai.sensing.SensorType;
 import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
@@ -44,25 +45,16 @@ import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.UUID;
 
-public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
+public class Scavenger extends PathfinderMob implements Merchant
 {
     @Nullable
     private Player tradingPlayer;
 
     @Nullable
-    public BlockPos homePosition;
-
-    @Nullable
     public MerchantOffers merchantOffers;
 
-    @Nullable
-    private UUID persistentAngerTarget;
-
     private long despawnDelay = 0;
-
-    private static final EntityDataAccessor<Integer> DATA_PERSISTENT_ANGER_TIME = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.INT);
 
     private static final EntityDataAccessor<Long> DATA_UNHAPPY_COUNTER = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.LONG);
 
@@ -76,6 +68,57 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     {
         super(entityType, level);
         this.xpReward = 10;
+    }
+
+    /* Brain */
+
+    @Override
+    @Nonnull
+    protected Brain.Provider<?> brainProvider()
+    {
+        return Brain.provider(ScavengerAi.MEMORY_TYPES, ScavengerAi.SENSOR_TYPES);
+    }
+
+    @Override
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    protected Brain<?> makeBrain(@Nonnull Dynamic<?> dynamic)
+    {
+        return ScavengerAi.makeBrain(this, (Brain<Scavenger>) this.brainProvider().makeBrain(dynamic));
+    }
+
+    @Override
+    @Nonnull
+    @SuppressWarnings("unchecked")
+    public Brain<Scavenger> getBrain()
+    {
+        return (Brain<Scavenger>) super.getBrain();
+    }
+
+    @Override
+    public void setHomeTo(@Nonnull BlockPos blockPos, int distance)
+    {
+        super.setHomeTo(blockPos, distance);
+        this.brain.setMemory(MemoryModuleType.HOME, GlobalPos.of(this.level().dimension(), blockPos));
+    }
+
+    @Override
+    public boolean hurtServer(@Nonnull ServerLevel serverLevel, @Nonnull DamageSource damageSource, float amount)
+    {
+        boolean flag = super.hurtServer(serverLevel, damageSource, amount);
+
+        if (flag)
+        {
+            Entity entity = damageSource.getEntity();
+
+            if (entity instanceof LivingEntity livingEntity )
+            {
+                this.brain.setMemory(MemoryModuleType.ANGRY_AT, livingEntity.getUUID());
+                this.brain.setMemory(MemoryModuleType.ATTACK_TARGET, livingEntity);
+            }
+        }
+
+        return flag;
     }
 
     public static AttributeSupplier registerAttributes()
@@ -92,31 +135,21 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     {
         renderState.mainArm = this.getMainArm();
         renderState.attackAnim = this.getAttackAnim(partialTick);
-        renderState.isAggressive = this.isAngry();
+        renderState.isAggressive = this.isAggressive();
         renderState.isDramatic = this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE);
         renderState.isUnhappy = this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER) > this.level().getGameTime();
         renderState.isHandsRaised = this.entityData.get(Scavenger.DATA_HANDS_RAISED) > this.level().getGameTime();
     }
 
     @Override
-    protected void registerGoals()
-    {
-        this.goalSelector.addGoal(1, new TradingWithPlayerGoal(this));
-        this.goalSelector.addGoal(1, new WatchTradingPlayerGoal(this));
-        this.goalSelector.addGoal(1, new ShowPlayerLootGoal(this));
-        this.goalSelector.addGoal(2, new WanderToPointGoal(this, 2.0D, 0.75D));
-        this.goalSelector.addGoal(3, new HurtByTargetGoal(this));
-        this.goalSelector.addGoal(5, new MeleeAttackGoal(this, 1.0, true));
-        this.goalSelector.addGoal(7, new WaterAvoidingRandomStrollGoal(this, 0.75));
-        this.goalSelector.addGoal(8, new RandomLookAroundGoal(this));
-        this.goalSelector.addGoal(9, new InteractGoal(this, Player.class, 3.0F, 1.0F));
-        this.targetSelector.addGoal(4, new NearestAttackableTargetGoal<>(this, Player.class, 10, true, false, this::isAngryAt));
-    }
-
-    @Override
     protected void customServerAiStep(@Nonnull ServerLevel level)
     {
-        this.updatePersistentAnger(level, true);
+        ProfilerFiller profilerfiller = Profiler.get();
+        profilerfiller.push("scavengerBrain");
+        this.getBrain().tick(level, this);
+        profilerfiller.popPush("scavengerActivityUpdate");
+        ScavengerAi.updateActivity(this);
+        profilerfiller.pop();
 
         // Make dramatic entrance.
         if (!this.hasEffect(MobEffects.INVISIBILITY) && this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE) && this.isAlive())
@@ -239,7 +272,7 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     @Override
     public InteractionResult mobInteract(@Nonnull Player player, @Nonnull InteractionHand hand)
     {
-        if (this.isAlive() && !this.isAngry() && !this.isInvisible() && this.tradingPlayer == null)
+        if (this.isAlive() && !this.isAggressive() && !this.isInvisible() && this.tradingPlayer == null)
         {
             if (!this.level().isClientSide)
             {
@@ -306,9 +339,8 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
         if (spawnReason == EntitySpawnReason.TRIGGERED)
         {
             this.despawnDelay = this.level().getGameTime() + 28000;
-            this.setHomeTo(this.blockPosition(), 16);
             this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, true);
-            this.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 80));
+            //this.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 80));
         }
 
         return super.finalizeSpawn(level, difficulty, spawnReason, spawnGroupData);
@@ -325,7 +357,6 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     protected void defineSynchedData(@Nonnull SynchedEntityData.Builder builder)
     {
         super.defineSynchedData(builder);
-        builder.define(Scavenger.DATA_PERSISTENT_ANGER_TIME, 0);
         builder.define(Scavenger.DATA_HANDS_RAISED, 0L);
         builder.define(Scavenger.DATA_UNHAPPY_COUNTER, 0L);
         builder.define(Scavenger.DATA_DRAMATIC_ENTRANCE, false);
@@ -336,12 +367,10 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     protected void addAdditionalSaveData(@Nonnull ValueOutput output)
     {
         super.addAdditionalSaveData(output);
-        this.addPersistentAngerSaveData(output);
         output.putLong("UnhappyCounter", this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER));
         output.putLong("HandsRaised", this.entityData.get(Scavenger.DATA_HANDS_RAISED));
         output.putBoolean("DramaticEntrance", this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE));
         output.putLong("DespawnDelay", this.despawnDelay);
-        output.storeNullable("HomePosition", BlockPos.CODEC, this.homePosition);
         output.storeNullable("MerchantOffers", MerchantOffers.CODEC, this.merchantOffers);
     }
 
@@ -349,12 +378,10 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     protected void readAdditionalSaveData(@Nonnull ValueInput output)
     {
         super.readAdditionalSaveData(output);
-        this.readPersistentAngerSaveData(this.level(), output);
         this.entityData.set(Scavenger.DATA_UNHAPPY_COUNTER, output.getLongOr("UnhappyCounter", 0L));
         this.entityData.set(Scavenger.DATA_HANDS_RAISED, output.getLongOr("HandsRaised", 0L));
         this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, output.getBooleanOr("DramaticEntrance", false));
         this.despawnDelay = output.getLongOr("DespawnDelay", 0L);
-        this.homePosition = output.read("HomePosition", BlockPos.CODEC).orElse(null);
         this.merchantOffers = output.read("MerchantOffers", MerchantOffers.CODEC).orElse(null);
     }
 
@@ -442,39 +469,6 @@ public class Scavenger extends PathfinderMob implements Merchant, NeutralMob
     public boolean showProgressBar()
     {
         return false;
-    }
-
-    /* Neutral Mob */
-
-    @Override
-    public int getRemainingPersistentAngerTime()
-    {
-        return this.entityData.get(Scavenger.DATA_PERSISTENT_ANGER_TIME);
-    }
-
-    @Override
-    public void setRemainingPersistentAngerTime(int time)
-    {
-        this.entityData.set(Scavenger.DATA_PERSISTENT_ANGER_TIME, time);
-    }
-
-    @Nullable
-    @Override
-    public UUID getPersistentAngerTarget()
-    {
-        return this.persistentAngerTarget;
-    }
-
-    @Override
-    public void setPersistentAngerTarget(@Nullable UUID uuid)
-    {
-        this.persistentAngerTarget = uuid;
-    }
-
-    @Override
-    public void startPersistentAngerTimer()
-    {
-        this.setRemainingPersistentAngerTime(TimeUtil.rangeOfSeconds(20, 39).sample(this.random));
     }
 
     @Override

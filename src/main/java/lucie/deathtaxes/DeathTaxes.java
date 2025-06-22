@@ -12,8 +12,8 @@ public class DeathTaxes
 
     public DeathTaxes(IEventBus modBus)
     {
-        ParticleTypeRegistry.PARTICLE_TYPES.register(modBus);
         AttachmentTypeRegistry.ATTACHMENT_TYPES.register(modBus);
+        ParticleTypeRegistry.PARTICLE_TYPES.register(modBus);
         SoundEventRegistry.SOUND_EVENTS.register(modBus);
         EntityTypeRegistry.ENTITY_TYPES.register(modBus);
         ItemRegistry.ITEMS.register(modBus);

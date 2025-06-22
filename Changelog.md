@@ -16,3 +16,5 @@
 * Withering no longer affects scavenger.
 * Scavenger can no longer be leashed.
 
+**1.3.0**
+* Made Scavenger use Behavior instead of Goals.
