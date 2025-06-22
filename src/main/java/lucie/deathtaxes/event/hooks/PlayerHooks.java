@@ -1,31 +1,30 @@
 package lucie.deathtaxes.event.hooks;
 
 import lucie.deathtaxes.DeathTaxes;
+import lucie.deathtaxes.capability.DroppedLootCapability;
 import lucie.deathtaxes.utility.ItemEvaluation;
-import lucie.deathtaxes.registry.AttachmentTypeRegistry;
 import lucie.deathtaxes.registry.EntityTypeRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntitySpawnReason;
-import net.minecraft.world.entity.SpawnPlacementType;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnPlacements;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.component.ItemContainerContents;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.GameRules;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.levelgen.Heightmap;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import java.util.Optional;
 
 public class PlayerHooks
@@ -37,61 +36,50 @@ public class PlayerHooks
         // Only process drops if keep inventory is disabled and drops exist.
         if (!level.getServer().getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).get() && !drops.isEmpty())
         {
+            // Collect a list of all loot that is not blacklisted.
             TagKey<Item> blacklist = ItemTags.create(DeathTaxes.withModNamespace("blacklisted_loot"));
+            List<ItemStack> loot = drops.stream().map(ItemEntity::getItem).filter(itemStack -> !itemStack.is(blacklist)).toList();
 
-            // Create a filtered container excluding blacklisted items.
-            ItemContainerContents contents = ItemContainerContents.fromItems(drops.stream()
-                    .map(ItemEntity::getItem)
-                    .filter(item -> !item.is(blacklist))
-                    .toList());
-
-            // Store valid drops in player data.
-            if (contents != ItemContainerContents.EMPTY)
-            {
-                player.setData(AttachmentTypeRegistry.PLAYER_INVENTORY_DROPS, contents);
-            }
-
+            // Store valid drops to the player's capability.
+            player.getCapability(DroppedLootCapability.DROPPED_LOOT_CAPABILITY).ifPresent(capability -> capability.droppedLoot = loot);
             return true;
         }
-        else
-        {
-            return false;
-        }
+
+        return false;
     }
 
     public static void copyDrops(Player original, Player current, boolean isDeath)
     {
-        ItemContainerContents contents = original.getData(AttachmentTypeRegistry.PLAYER_INVENTORY_DROPS);
-
-        // Copy dropped inventory data.
-        if (!contents.equals(ItemContainerContents.EMPTY) && isDeath)
+        if (isDeath)
         {
-            current.setData(AttachmentTypeRegistry.PLAYER_INVENTORY_DROPS, contents);
+            original.reviveCaps();
+            original.getCapability(DroppedLootCapability.DROPPED_LOOT_CAPABILITY).ifPresent(oldCapability ->
+                    current.getCapability(DroppedLootCapability.DROPPED_LOOT_CAPABILITY).ifPresent(newCapability ->
+                            newCapability.copyFrom(oldCapability)));
+            original.invalidateCaps();
         }
     }
 
     public static void checkDrops(ServerLevel level, ServerPlayer player)
     {
-        ItemContainerContents contents = player.getData(AttachmentTypeRegistry.PLAYER_INVENTORY_DROPS);
+        // Check if the player has any dropped loot.
+        player.getCapability(DroppedLootCapability.DROPPED_LOOT_CAPABILITY).filter(cap -> !cap.droppedLoot.isEmpty()).ifPresent(cap -> {
+                System.out.println("test");
+                PlayerHooks.spawn(player, level, cap.droppedLoot);
+        });
 
-        // Copy dropped inventory data.
-        if (!contents.equals(ItemContainerContents.EMPTY))
-        {
-            // Try spawn entity.
-            PlayerHooks.spawn(player, level, contents);
-
-            // Remove used data.
-            player.removeData(AttachmentTypeRegistry.PLAYER_INVENTORY_DROPS);
-        }
+        // Clear the dropped loot capability.
+        player.getCapability(DroppedLootCapability.DROPPED_LOOT_CAPABILITY).ifPresent(cap -> cap.droppedLoot = new ArrayList<>());
     }
 
     /* Scavenger Spawning */
 
-    private static void spawn(ServerPlayer player, ServerLevel level, ItemContainerContents contents)
+    private static void spawn(ServerPlayer player, ServerLevel level, List<ItemStack> contents)
     {
+        System.out.println("Spawning Scavenger...");
         // Generate merchant offers from the item container.
         MerchantOffers offers = ItemEvaluation.evaluateItems(player, level, contents);
-
+        System.out.println(offers.isEmpty());
         // Spawn Scavenger.
         if (!offers.isEmpty())
         {
@@ -102,17 +90,17 @@ public class PlayerHooks
             BlockPos spawnpoint = PlayerHooks.locate(level, target, level.random).orElse(target);
 
             // Add merchant offers and a home position.
-            Optional.ofNullable(EntityTypeRegistry.SCAVENGER.value().spawn(level, spawnpoint, EntitySpawnReason.TRIGGERED)).ifPresent(scavenger ->
+            Optional.ofNullable(EntityTypeRegistry.SCAVENGER.get().spawn(level, spawnpoint, MobSpawnType.TRIGGERED)).ifPresent(scavenger ->
             {
                 scavenger.merchantOffers = offers;
-                scavenger.setHomeTo(target, 16);
+                scavenger.restrictTo(target, 16);
             });
         }
     }
 
     private static Optional<BlockPos> locate(LevelReader level, BlockPos blockPos, RandomSource randomSource)
     {
-        SpawnPlacementType spawnPlacementType = SpawnPlacements.getPlacementType(EntityTypeRegistry.SCAVENGER.value());
+        SpawnPlacements.Type spawnPlacementType = SpawnPlacements.getPlacementType(EntityTypeRegistry.SCAVENGER.get());
 
         for (int i = 0; i < 16; i++)
         {
@@ -123,7 +111,7 @@ public class PlayerHooks
             BlockPos randomPos = new BlockPos(x, y, z);
 
             // Validate spawn position.
-            if (spawnPlacementType.isSpawnPositionOk(level, randomPos, EntityTypeRegistry.SCAVENGER.value()) && PlayerHooks.accessible(level, randomPos))
+            if (spawnPlacementType.canSpawnAt(level, randomPos, EntityTypeRegistry.SCAVENGER.get()) && PlayerHooks.accessible(level, randomPos))
             {
                 return Optional.of(randomPos);
             }

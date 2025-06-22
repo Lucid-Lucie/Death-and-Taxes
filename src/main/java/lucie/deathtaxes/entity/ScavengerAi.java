@@ -7,9 +7,9 @@ import lucie.deathtaxes.entity.behavior.AdvertisePlayerLoot;
 import lucie.deathtaxes.entity.behavior.DramaticEntrance;
 import lucie.deathtaxes.entity.behavior.FollowTradingPlayer;
 import lucie.deathtaxes.entity.behavior.MoveAroundPoint;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.behavior.*;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
@@ -69,7 +69,7 @@ public class ScavengerAi
                 Pair.of(3, new AdvertisePlayerLoot(400, 1600)),
                 Pair.of(3, MoveAroundPoint.create(MemoryModuleType.HOME, 0.75F, 16)),
                 Pair.of(3, SetLookAndInteract.create(EntityType.PLAYER, 4)),
-                Pair.of(1, StartAttacking.create((serverLevel, scavenger) -> scavenger.isAggressive(), ScavengerAi::findNearestValidAttackTarget)))
+                Pair.of(1, StartAttacking.create(Mob::isAggressive, ScavengerAi::findNearestValidAttackTarget)))
         );
     }
 
@@ -77,7 +77,7 @@ public class ScavengerAi
     {
         brain.addActivityAndRemoveMemoryWhenStopped(Activity.FIGHT, 10, ImmutableList.of(
                 MeleeAttack.create(20),
-                StopAttackingIfTargetInvalid.create((serverLevel, livingEntity) -> !ScavengerAi.isNearestValidAttackTarget(serverLevel, scavenger, livingEntity)),
+                StopAttackingIfTargetInvalid.create((livingEntity) -> !ScavengerAi.isNearestValidAttackTarget(scavenger, livingEntity)),
                 SetWalkTargetFromAttackTargetIfTargetOutOfReach.create(1.0F)
         ), MemoryModuleType.ATTACK_TARGET);
     }
@@ -88,11 +88,11 @@ public class ScavengerAi
         scavenger.getBrain().setActiveActivityToFirstValid(ImmutableList.of(Activity.FIGHT, Activity.IDLE));
     }
 
-    public static Optional<? extends LivingEntity> findNearestValidAttackTarget(ServerLevel level, Scavenger scavenger)
+    public static Optional<? extends LivingEntity> findNearestValidAttackTarget(Scavenger scavenger)
     {
         Optional<LivingEntity> optionalEntity = BehaviorUtils.getLivingEntityFromUUIDMemory(scavenger, MemoryModuleType.ANGRY_AT);
 
-        if (optionalEntity.isPresent() && Sensor.isEntityAttackable(level, scavenger, optionalEntity.get()))
+        if (optionalEntity.isPresent() && Sensor.isEntityAttackable(scavenger, optionalEntity.get()))
         {
             return optionalEntity;
         }
@@ -100,9 +100,9 @@ public class ScavengerAi
         return Optional.empty();
     }
 
-    private static boolean isNearestValidAttackTarget(ServerLevel level, Scavenger scavenger, LivingEntity target)
+    private static boolean isNearestValidAttackTarget(Scavenger scavenger, LivingEntity target)
     {
-        return findNearestValidAttackTarget(level, scavenger)
+        return findNearestValidAttackTarget(scavenger)
                 .filter(livingEntity -> livingEntity == target)
                 .isPresent();
     }

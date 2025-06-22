@@ -1,12 +1,12 @@
 package lucie.deathtaxes.entity;
 
 import com.mojang.serialization.Dynamic;
-import lucie.deathtaxes.client.state.ScavengerRenderState;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import lucie.deathtaxes.registry.SoundEventRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -14,7 +14,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
@@ -36,11 +35,10 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.Optional;
 
 public class Scavenger extends PathfinderMob implements Merchant
 {
@@ -96,11 +94,11 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    protected void customServerAiStep(@Nonnull ServerLevel level)
+    protected void customServerAiStep()
     {
-        ProfilerFiller profilerfiller = Profiler.get();
+        ProfilerFiller profilerfiller = this.level().getProfiler();
         profilerfiller.push("scavengerBrain");
-        this.getBrain().tick(level, this);
+        this.getBrain().tick((ServerLevel) this.level(), this);
         profilerfiller.popPush("scavengerActivityUpdate");
         ScavengerAi.updateActivity(this);
         profilerfiller.pop();
@@ -129,7 +127,7 @@ public class Scavenger extends PathfinderMob implements Merchant
             // Play buzzing sounds.
             if (this.random.nextInt(8) == 0)
             {
-                this.level().playLocalSound(this, SoundEventRegistry.FLIES_BUZZING.value(), SoundSource.NEUTRAL, 0.25F, 1.0F);
+                this.level().playLocalSound(this.blockPosition(), SoundEventRegistry.FLIES_BUZZING.get(), SoundSource.NEUTRAL, 0.25F, 1.0F, false);
             }
         }
         else if (id == 23)
@@ -138,20 +136,19 @@ public class Scavenger extends PathfinderMob implements Merchant
             {
                 this.unhappyCounter = this.level().getGameTime() + 40;
                 this.ambientSoundTime = 0;
-                this.level().playLocalSound(this, SoundEventRegistry.SCAVENGER_NO.value(), SoundSource.NEUTRAL, 1.0F, 1.0F);
+                this.level().playLocalSound(this.blockPosition(), SoundEventRegistry.SCAVENGER_NO.get(), SoundSource.NEUTRAL, 1.0F, 1.0F, false);
             }
         }
         else if (id == 24)
         {
             super.handleEntityEvent((byte)60);
-            this.level().playLocalSound(this, SoundEventRegistry.SOMETHING_TELEPORTS.value(), SoundSource.NEUTRAL, 1.0F, 1.0F);
-            this.level().playLocalSound(this, SoundEventRegistry.SCAVENGER_YES.value(), SoundSource.NEUTRAL, 1.0F, 1.0F);
+            this.level().playLocalSound(this.blockPosition(), SoundEventRegistry.SOMETHING_TELEPORTS.get(), SoundSource.NEUTRAL, 1.0F, 1.0F, false);
+            this.level().playLocalSound(this.blockPosition(), SoundEventRegistry.SCAVENGER_YES.get(), SoundSource.NEUTRAL, 1.0F, 1.0F, false);
             this.handCounter = this.level().getGameTime() + 30;
         }
     }
 
     @Override
-    @SuppressWarnings("deprecation")
     public boolean canBeAffected(@Nonnull MobEffectInstance effectInstance)
     {
         return !MobEffects.WITHER.equals(effectInstance.getEffect()) && super.canBeAffected(effectInstance);
@@ -184,7 +181,7 @@ public class Scavenger extends PathfinderMob implements Merchant
             // Don't despawn while trading.
             if (shouldDespawn && tradingPlayer == null)
             {
-                this.makeSound(SoundEventRegistry.SOMETHING_TELEPORTS.value());
+                this.playSound(SoundEventRegistry.SOMETHING_TELEPORTS.get());
                 this.level().broadcastEntityEvent(this, (byte) 60);
                 this.discard();
                 return;
@@ -195,9 +192,9 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    public boolean doHurtTarget(@Nonnull ServerLevel serverLevel, @Nonnull Entity entity)
+    public boolean doHurtTarget(@Nonnull Entity entity)
     {
-        if (super.doHurtTarget(serverLevel, entity))
+        if (super.doHurtTarget(entity))
         {
             if (entity instanceof LivingEntity livingEntity)
             {
@@ -212,14 +209,16 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    public boolean hurtServer(@Nonnull ServerLevel serverLevel, @Nonnull DamageSource damageSource, float amount)
+    public boolean hurt(@Nonnull DamageSource damageSource, float amount)
     {
-        if (super.hurtServer(serverLevel, damageSource, amount))
+        if (super.hurt(damageSource, amount))
         {
             Entity entity = damageSource.getEntity();
 
-            if (entity instanceof LivingEntity livingEntity && !livingEntity.hasInfiniteMaterials())
+            if (entity instanceof LivingEntity livingEntity)
             {
+                if (entity instanceof Player player && player.isCreative()) return true;
+
                 this.brain.setMemory(MemoryModuleType.ANGRY_AT, livingEntity.getUUID());
                 this.brain.setMemory(MemoryModuleType.ATTACK_TARGET, livingEntity);
             }
@@ -263,21 +262,21 @@ public class Scavenger extends PathfinderMob implements Merchant
     @Override
     protected SoundEvent getHurtSound(@Nonnull DamageSource damageSource)
     {
-        return SoundEventRegistry.SCAVENGER_HURT.value();
+        return SoundEventRegistry.SCAVENGER_HURT.get();
     }
 
     @Nullable
     @Override
     protected SoundEvent getAmbientSound()
     {
-        return SoundEventRegistry.SCAVENGER_AMBIENT.value();
+        return SoundEventRegistry.SCAVENGER_AMBIENT.get();
     }
 
     @Nullable
     @Override
     protected SoundEvent getDeathSound()
     {
-        return SoundEventRegistry.SCAVENGER_DEATH.value();
+        return SoundEventRegistry.SCAVENGER_DEATH.get();
     }
 
     @Override
@@ -288,16 +287,16 @@ public class Scavenger extends PathfinderMob implements Merchant
 
     /* Data */
 
-    @Nullable
     @Override
+    @Nullable
     @SuppressWarnings("deprecation")
-    public SpawnGroupData finalizeSpawn(@Nonnull ServerLevelAccessor level, @Nonnull DifficultyInstance difficulty, @Nonnull EntitySpawnReason spawnReason, @Nullable SpawnGroupData spawnGroupData)
+    public SpawnGroupData finalizeSpawn(@Nonnull ServerLevelAccessor level, @Nonnull DifficultyInstance difficulty, @Nonnull MobSpawnType spawnType, @Nullable SpawnGroupData spawnGroupData, @Nullable CompoundTag compoundTag)
     {
         // Give entity a shovel.
         this.populateDefaultEquipmentSlots(this.random, difficulty);
-        this.populateDefaultEquipmentEnchantments(level, this.random, difficulty);
+        this.populateDefaultEquipmentEnchantments(this.random, difficulty);
 
-        if (spawnReason == EntitySpawnReason.TRIGGERED)
+        if (spawnType == MobSpawnType.TRIGGERED)
         {
             // Scavenger only stays for a day when summoned by respawning.
             this.despawnDelay = this.level().getGameTime() + 24000;
@@ -308,10 +307,10 @@ public class Scavenger extends PathfinderMob implements Merchant
         else
         {
             // Fix scavenger pathing when no home is set.
-            this.setHomeTo(this.blockPosition(), 16);
+            this.restrictTo(this.blockPosition(), 16);
         }
 
-        return super.finalizeSpawn(level, difficulty, spawnReason, spawnGroupData);
+        return super.finalizeSpawn(level, difficulty, spawnType, spawnGroupData, compoundTag);
     }
 
     @Override
@@ -322,26 +321,26 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    protected void defineSynchedData(@Nonnull SynchedEntityData.Builder builder)
+    protected void defineSynchedData()
     {
-        super.defineSynchedData(builder);
-        builder.define(Scavenger.DATA_DISPLAY_ITEM, ItemStack.EMPTY);
+        super.defineSynchedData();
+        this.entityData.define(Scavenger.DATA_DISPLAY_ITEM, ItemStack.EMPTY);
     }
 
     @Override
-    protected void addAdditionalSaveData(@Nonnull ValueOutput output)
+    public void addAdditionalSaveData(@Nonnull CompoundTag compoundTag)
     {
-        super.addAdditionalSaveData(output);
-        output.putLong("DespawnDelay", this.despawnDelay);
-        output.storeNullable("MerchantOffers", MerchantOffers.CODEC, this.merchantOffers);
+        super.addAdditionalSaveData(compoundTag);
+        compoundTag.putLong("DespawnDelay", this.despawnDelay);
+        compoundTag.put("MerchantOffers", this.getOffers().createTag());
     }
 
     @Override
-    protected void readAdditionalSaveData(@Nonnull ValueInput output)
+    public void readAdditionalSaveData(@Nonnull CompoundTag compoundTag)
     {
-        super.readAdditionalSaveData(output);
-        this.despawnDelay = output.getLongOr("DespawnDelay", 0L);
-        this.merchantOffers = output.read("MerchantOffers", MerchantOffers.CODEC).orElse(null);
+        super.readAdditionalSaveData(compoundTag);
+        merchantOffers = Optional.of(compoundTag.getCompound("MerchantOffers")).map(MerchantOffers::new).orElse(new MerchantOffers());
+        despawnDelay = compoundTag.getLong("DespawnDelay");
     }
 
     /* Merchant */
@@ -389,7 +388,7 @@ public class Scavenger extends PathfinderMob implements Merchant
         if (!this.level().isClientSide && this.ambientSoundTime > -this.getAmbientSoundInterval() + 20)
         {
             this.ambientSoundTime = -this.getAmbientSoundInterval();
-            this.makeSound((itemStack.isEmpty() ? SoundEventRegistry.SCAVENGER_NO.value() : SoundEventRegistry.SCAVENGER_YES.value()));
+            this.playSound((itemStack.isEmpty() ? SoundEventRegistry.SCAVENGER_NO.get() : SoundEventRegistry.SCAVENGER_YES.get()));
         }
     }
 
@@ -397,19 +396,13 @@ public class Scavenger extends PathfinderMob implements Merchant
     @Override
     public SoundEvent getNotifyTradeSound()
     {
-        return SoundEventRegistry.SCAVENGER_TRADE.value();
+        return SoundEventRegistry.SCAVENGER_TRADE.get();
     }
 
     @Override
     public boolean isClientSide()
     {
         return this.level().isClientSide;
-    }
-
-    @Override
-    public boolean stillValid(@Nonnull Player player)
-    {
-        return this.getTradingPlayer() == player && this.isAlive() && player.canInteractWithEntity(this, 4.0);
     }
 
     @Override
@@ -431,15 +424,15 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    public boolean canBeLeashed()
+    public boolean canBeLeashed(@Nonnull Player player)
     {
         return false;
     }
 
     @Override
-    public void setHomeTo(@Nonnull BlockPos blockPos, int distance)
+    public void restrictTo(@Nonnull BlockPos blockPos, int distance)
     {
-        super.setHomeTo(blockPos, distance);
+        super.restrictTo(blockPos, distance);
         this.brain.setMemory(MemoryModuleType.HOME, GlobalPos.of(this.level().dimension(), blockPos));
     }
 }

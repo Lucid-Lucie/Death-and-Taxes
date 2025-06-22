@@ -109,7 +109,7 @@ public class AdvertisePlayerLoot extends Behavior<Scavenger>
             if (!this.displayItems.isEmpty())
             {
                 this.lookTime = 900;
-                this.setDisplayItem(scavenger, this.displayItems.getFirst());
+                this.setDisplayItem(scavenger, this.displayItems.get(0));
             }
         }
     }

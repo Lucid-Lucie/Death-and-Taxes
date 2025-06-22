@@ -14,32 +14,33 @@ import java.util.Optional;
 
 public class MoveAroundPoint
 {
-
-    public static OneShot<Scavenger> create(MemoryModuleType<GlobalPos> poiMemory, float speedModifier, int maxDistFromPoi) {
+    public static OneShot<Scavenger> create(MemoryModuleType<GlobalPos> poiMemory, float speedModifier, int maxDistFromPoi)
+    {
         MutableLong nextStrollTime = new MutableLong(0L);
 
         return BehaviorBuilder.create(context ->
-                context.group(
-                        context.registered(MemoryModuleType.WALK_TARGET),
-                        context.present(poiMemory)
-                ).apply(context, (walkTargetAccessor, poiAccessor) ->
-                        (level, entity, gameTime) -> {
-                            if (entity.getTradingPlayer() != null) {
+                context.group(context.registered(MemoryModuleType.WALK_TARGET), context.present(poiMemory)).apply(context, (walkTargetAccessor, poiAccessor) -> (level, entity, gameTime) -> {
+                            if (entity.getTradingPlayer() != null)
+                            {
                                 return false;
                             }
 
                             GlobalPos poi = context.get(poiAccessor);
 
-                            if (!level.dimension().equals(poi.dimension())) {
+                            if (!level.dimension().equals(poi.dimension()))
+                            {
                                 return false;
                             }
 
                             double distSqr = entity.blockPosition().distSqr(poi.pos());
 
-                            if (distSqr > maxDistFromPoi * maxDistFromPoi) {
+                            if (distSqr > maxDistFromPoi * maxDistFromPoi)
+                            {
                                 walkTargetAccessor.set(new WalkTarget(poi.pos(), speedModifier, 1));
-                            } else {
-                                if (gameTime >= nextStrollTime.getValue()) {
+                            } else
+                            {
+                                if (gameTime >= nextStrollTime.getValue())
+                                {
                                     Optional<Vec3> randomPos = Optional.ofNullable(LandRandomPos.getPos(entity, 8, 6));
                                     randomPos.ifPresent(pos ->
                                             walkTargetAccessor.set(new WalkTarget(pos, speedModifier, 1))

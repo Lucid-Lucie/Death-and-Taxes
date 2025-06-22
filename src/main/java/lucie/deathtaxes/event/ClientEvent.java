@@ -6,13 +6,13 @@ import lucie.deathtaxes.client.particle.FlyParticle;
 import lucie.deathtaxes.client.renderer.ScavengerRenderer;
 import lucie.deathtaxes.registry.EntityTypeRegistry;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.EntityRenderersEvent;
-import net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
 
-@EventBusSubscriber(modid = DeathTaxes.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = DeathTaxes.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientEvent
 {
     @SubscribeEvent
@@ -24,7 +24,7 @@ public class ClientEvent
     @SubscribeEvent
     public static void onRegisterRenderers(EntityRenderersEvent.RegisterRenderers event)
     {
-        event.registerEntityRenderer(EntityTypeRegistry.SCAVENGER.value(), ScavengerRenderer::new);
+        event.registerEntityRenderer(EntityTypeRegistry.SCAVENGER.get(), ScavengerRenderer::new);
     }
 
     @SubscribeEvent
