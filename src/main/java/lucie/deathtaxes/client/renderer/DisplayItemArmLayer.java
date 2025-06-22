@@ -24,7 +24,7 @@ public class DisplayItemArmLayer extends RenderLayer<ScavengerRenderState, Scave
     {
         ItemStackRenderState itemStackRenderState = renderState.displayItem;
 
-        if (!itemStackRenderState.isEmpty() && !renderState.isAggressive && !renderState.isDramatic)
+        if (!itemStackRenderState.isEmpty() && !renderState.isAggressive && !renderState.isHandsRaised)
         {
             poseStack.pushPose();
             this.getParentModel().translateToArms(poseStack);

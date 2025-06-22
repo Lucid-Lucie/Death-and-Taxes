@@ -1,9 +1,7 @@
 package lucie.deathtaxes.entity;
 
-import com.google.common.collect.ImmutableList;
 import com.mojang.serialization.Dynamic;
 import lucie.deathtaxes.client.state.ScavengerRenderState;
-import lucie.deathtaxes.registry.AttachmentTypeRegistry;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import lucie.deathtaxes.registry.SoundEventRegistry;
 import net.minecraft.core.BlockPos;
@@ -14,7 +12,6 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.profiling.Profiler;
@@ -30,9 +27,6 @@ import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
-import net.minecraft.world.entity.ai.sensing.Sensor;
-import net.minecraft.world.entity.ai.sensing.SensorType;
-import net.minecraft.world.entity.ambient.Bat;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -56,13 +50,7 @@ public class Scavenger extends PathfinderMob implements Merchant
     @Nullable
     public MerchantOffers merchantOffers;
 
-    private long unhappyCounter;
-
-    private long despawnDelay = 0;
-
-    private static final EntityDataAccessor<Long> DATA_HANDS_RAISED = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.LONG);
-
-    public static final EntityDataAccessor<Boolean> DATA_DRAMATIC_ENTRANCE = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.BOOLEAN);
+    public long unhappyCounter, handCounter, despawnDelay;
 
     public static final EntityDataAccessor<ItemStack> DATA_DISPLAY_ITEM = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.ITEM_STACK);
 
@@ -97,32 +85,6 @@ public class Scavenger extends PathfinderMob implements Merchant
         return (Brain<Scavenger>) super.getBrain();
     }
 
-    @Override
-    public void setHomeTo(@Nonnull BlockPos blockPos, int distance)
-    {
-        super.setHomeTo(blockPos, distance);
-        this.brain.setMemory(MemoryModuleType.HOME, GlobalPos.of(this.level().dimension(), blockPos));
-    }
-
-    @Override
-    public boolean hurtServer(@Nonnull ServerLevel serverLevel, @Nonnull DamageSource damageSource, float amount)
-    {
-        boolean flag = super.hurtServer(serverLevel, damageSource, amount);
-
-        if (flag)
-        {
-            Entity entity = damageSource.getEntity();
-
-            if (entity instanceof LivingEntity livingEntity )
-            {
-                this.brain.setMemory(MemoryModuleType.ANGRY_AT, livingEntity.getUUID());
-                this.brain.setMemory(MemoryModuleType.ATTACK_TARGET, livingEntity);
-            }
-        }
-
-        return flag;
-    }
-
     public static AttributeSupplier registerAttributes()
     {
         return Monster.createMonsterAttributes()
@@ -131,16 +93,6 @@ public class Scavenger extends PathfinderMob implements Merchant
                 .add(Attributes.MAX_HEALTH, 24.0F)
                 .add(Attributes.ATTACK_DAMAGE, 0.5F)
                 .build();
-    }
-
-    public void registerRenderState(ScavengerRenderState renderState, float partialTick)
-    {
-        renderState.mainArm = this.getMainArm();
-        renderState.attackAnim = this.getAttackAnim(partialTick);
-        renderState.isAggressive = this.isAggressive();
-        renderState.isDramatic = this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE);
-        renderState.isUnhappy = this.unhappyCounter > this.level().getGameTime();
-        renderState.isHandsRaised = this.entityData.get(Scavenger.DATA_HANDS_RAISED) > this.level().getGameTime();
     }
 
     @Override
@@ -152,34 +104,12 @@ public class Scavenger extends PathfinderMob implements Merchant
         profilerfiller.popPush("scavengerActivityUpdate");
         ScavengerAi.updateActivity(this);
         profilerfiller.pop();
-
-        // Make dramatic entrance.
-        if (!this.hasEffect(MobEffects.INVISIBILITY) && this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE) && this.isAlive())
-        {
-            this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, false);
-            this.entityData.set(Scavenger.DATA_HANDS_RAISED, this.level().getGameTime() + 30);
-            this.level().broadcastEntityEvent(this, (byte) 60);
-            this.makeSound(SoundEventRegistry.SOMETHING_TELEPORTS.value());
-            this.makeSound(SoundEventRegistry.SCAVENGER_YES.value());
-
-            // Spawn two bats.
-            for (int i = 0; i < 2; i++)
-            {
-                Bat bat = EntityType.BAT.spawn(level, this.blockPosition().above(), EntitySpawnReason.TRIGGERED);
-                if (bat != null)
-                {
-                    bat.setData(AttachmentTypeRegistry.DESPAWN_TIME.get(), this.level().getGameTime() + 120 + (10 * i));
-                    bat.setHomeTo(this.blockPosition(), 16);
-                }
-            }
-        }
     }
 
     @Override
     public void aiStep()
     {
         super.aiStep();
-
         this.updateSwingTime();
     }
 
@@ -203,6 +133,13 @@ public class Scavenger extends PathfinderMob implements Merchant
                 this.ambientSoundTime = 0;
                 this.level().playLocalSound(this, SoundEventRegistry.SCAVENGER_NO.value(), SoundSource.NEUTRAL, 1.0F, 1.0F);
             }
+        }
+        else if (id == 24)
+        {
+            super.handleEntityEvent((byte)60);
+            this.level().playLocalSound(this, SoundEventRegistry.SOMETHING_TELEPORTS.value(), SoundSource.NEUTRAL, 1.0F, 1.0F);
+            this.level().playLocalSound(this, SoundEventRegistry.SCAVENGER_YES.value(), SoundSource.NEUTRAL, 1.0F, 1.0F);
+            this.handCounter = this.level().getGameTime() + 30;
         }
     }
 
@@ -259,6 +196,25 @@ public class Scavenger extends PathfinderMob implements Merchant
             {
                 float duration = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
                 livingEntity.addEffect(new MobEffectInstance(MobEffects.WITHER, 140 * (int) duration), this);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean hurtServer(@Nonnull ServerLevel serverLevel, @Nonnull DamageSource damageSource, float amount)
+    {
+        if (super.hurtServer(serverLevel, damageSource, amount))
+        {
+            Entity entity = damageSource.getEntity();
+
+            if (entity instanceof LivingEntity livingEntity && !livingEntity.hasInfiniteMaterials())
+            {
+                this.brain.setMemory(MemoryModuleType.ANGRY_AT, livingEntity.getUUID());
+                this.brain.setMemory(MemoryModuleType.ATTACK_TARGET, livingEntity);
             }
 
             return true;
@@ -334,12 +290,18 @@ public class Scavenger extends PathfinderMob implements Merchant
         this.populateDefaultEquipmentSlots(this.random, difficulty);
         this.populateDefaultEquipmentEnchantments(level, this.random, difficulty);
 
-        // Set dramatic effect.
         if (spawnReason == EntitySpawnReason.TRIGGERED)
         {
-            this.despawnDelay = this.level().getGameTime() + 28000;
-            this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, true);
-            //this.addEffect(new MobEffectInstance(MobEffects.INVISIBILITY, 80));
+            // Scavenger only stays for a day when summoned by respawning.
+            this.despawnDelay = this.level().getGameTime() + 24000;
+
+            // Scavenger enters dramatically when summoned by respawning.
+            this.getBrain().setMemory(MemoryModuleType.DANCING, true);
+        }
+        else
+        {
+            // Fix scavenger pathing when no home is set.
+            this.setHomeTo(this.blockPosition(), 16);
         }
 
         return super.finalizeSpawn(level, difficulty, spawnReason, spawnGroupData);
@@ -356,8 +318,6 @@ public class Scavenger extends PathfinderMob implements Merchant
     protected void defineSynchedData(@Nonnull SynchedEntityData.Builder builder)
     {
         super.defineSynchedData(builder);
-        builder.define(Scavenger.DATA_HANDS_RAISED, 0L);
-        builder.define(Scavenger.DATA_DRAMATIC_ENTRANCE, false);
         builder.define(Scavenger.DATA_DISPLAY_ITEM, ItemStack.EMPTY);
     }
 
@@ -365,8 +325,6 @@ public class Scavenger extends PathfinderMob implements Merchant
     protected void addAdditionalSaveData(@Nonnull ValueOutput output)
     {
         super.addAdditionalSaveData(output);
-        output.putLong("HandsRaised", this.entityData.get(Scavenger.DATA_HANDS_RAISED));
-        output.putBoolean("DramaticEntrance", this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE));
         output.putLong("DespawnDelay", this.despawnDelay);
         output.storeNullable("MerchantOffers", MerchantOffers.CODEC, this.merchantOffers);
     }
@@ -375,8 +333,6 @@ public class Scavenger extends PathfinderMob implements Merchant
     protected void readAdditionalSaveData(@Nonnull ValueInput output)
     {
         super.readAdditionalSaveData(output);
-        this.entityData.set(Scavenger.DATA_HANDS_RAISED, output.getLongOr("HandsRaised", 0L));
-        this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, output.getBooleanOr("DramaticEntrance", false));
         this.despawnDelay = output.getLongOr("DespawnDelay", 0L);
         this.merchantOffers = output.read("MerchantOffers", MerchantOffers.CODEC).orElse(null);
     }
@@ -471,5 +427,12 @@ public class Scavenger extends PathfinderMob implements Merchant
     public boolean canBeLeashed()
     {
         return false;
+    }
+
+    @Override
+    public void setHomeTo(@Nonnull BlockPos blockPos, int distance)
+    {
+        super.setHomeTo(blockPos, distance);
+        this.brain.setMemory(MemoryModuleType.HOME, GlobalPos.of(this.level().dimension(), blockPos));
     }
 }

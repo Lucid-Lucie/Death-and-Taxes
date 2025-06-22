@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import lucie.deathtaxes.entity.behavior.AdvertisePlayerLoot;
+import lucie.deathtaxes.entity.behavior.DramaticEntrance;
 import lucie.deathtaxes.entity.behavior.FollowTradingPlayer;
 import lucie.deathtaxes.entity.behavior.MoveAroundPoint;
 import net.minecraft.server.level.ServerLevel;
@@ -30,7 +31,8 @@ public class ScavengerAi
             MemoryModuleType.HOME,
             MemoryModuleType.ANGRY_AT,
             MemoryModuleType.ATTACK_TARGET,
-            MemoryModuleType.ATTACK_COOLING_DOWN
+            MemoryModuleType.ATTACK_COOLING_DOWN,
+            MemoryModuleType.DANCING
     );
 
     protected static final ImmutableList<SensorType<? extends Sensor<? super Scavenger>>> SENSOR_TYPES = ImmutableList.of(
@@ -54,6 +56,7 @@ public class ScavengerAi
     {
         brain.addActivity(Activity.CORE, ImmutableList.of(
                 Pair.of(0, new LookAtTargetSink(45, 90)),
+                Pair.of(0, new DramaticEntrance()),
                 Pair.of(1, new MoveToTargetSink()),
                 Pair.of(4, new FollowTradingPlayer()))
         );

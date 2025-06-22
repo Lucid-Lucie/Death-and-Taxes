@@ -10,8 +10,6 @@ public class ScavengerRenderState extends ArmedEntityRenderState
 
     public boolean isUnhappy;
 
-    public boolean isDramatic;
-
     public boolean isHandsRaised;
 
     public HumanoidArm mainArm;

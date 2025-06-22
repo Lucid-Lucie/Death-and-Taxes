@@ -52,17 +52,18 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerRenderSta
     public void extractRenderState(@Nonnull Scavenger scavenger, @Nonnull ScavengerRenderState renderState, float partialTick)
     {
         super.extractRenderState(scavenger, renderState, partialTick);
-        ArmedEntityRenderState.extractArmedEntityRenderState(scavenger, renderState, this.itemModelResolver);
-        this.itemModelResolver.updateForLiving(renderState.displayItem, scavenger.getDisplayItem(), ItemDisplayContext.GROUND, scavenger);
-        scavenger.registerRenderState(renderState, partialTick);
-    }
 
-    @Override
-    public void render(@Nonnull ScavengerRenderState renderState, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource bufferSource, int packedLight)
-    {
-        if (!renderState.isDramatic)
-        {
-            super.render(renderState, poseStack, bufferSource, packedLight);
-        }
+        // Weapon render state.
+        ArmedEntityRenderState.extractArmedEntityRenderState(scavenger, renderState, this.itemModelResolver);
+
+        // Display item render state.
+        this.itemModelResolver.updateForLiving(renderState.displayItem, scavenger.getDisplayItem(), ItemDisplayContext.GROUND, scavenger);
+
+        // Scavenger render state.
+        renderState.mainArm = scavenger.getMainArm();
+        renderState.attackAnim = scavenger.getAttackAnim(partialTick);
+        renderState.isAggressive = scavenger.isAggressive();
+        renderState.isUnhappy = scavenger.unhappyCounter > scavenger.level().getGameTime();
+        renderState.isHandsRaised = scavenger.handCounter > scavenger.level().getGameTime();
     }
 }
