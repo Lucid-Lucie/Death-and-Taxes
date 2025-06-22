@@ -1,4 +1,4 @@
-package lucie.deathtaxes.utility;
+package lucie.deathtaxes.loot;
 
 import lucie.deathtaxes.DeathTaxes;
 import net.minecraft.server.level.ServerLevel;
