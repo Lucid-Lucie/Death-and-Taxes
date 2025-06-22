@@ -103,5 +103,26 @@
       "mob/endermen/portal2"
     ],
     "subtitle": "subtitles.deathtaxes.misc.teleport"
+  },
+  "misc.flies": {
+    "sounds": [
+      {
+        "name": "minecraft:block/beehive/work1",
+        "pitch": 1.5
+      },
+      {
+        "name": "minecraft:block/beehive/work2",
+        "pitch": 1.5
+      },
+      {
+        "name": "minecraft:block/beehive/work3",
+        "pitch": 1.5
+      },
+      {
+        "name": "minecraft:block/beehive/work4",
+        "pitch": 1.5
+      }
+    ],
+    "subtitle": "subtitles.deathtaxes.misc.flies"
   }
 }

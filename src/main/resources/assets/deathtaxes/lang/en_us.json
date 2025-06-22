@@ -7,5 +7,6 @@
   "subtitles.deathtaxes.entity.scavenger.yes": "Scavenger agrees",
   "subtitles.deathtaxes.entity.scavenger.no": "Scavenger disagrees",
   "subtitles.deathtaxes.entity.scavenger.trade": "Scavenger trades",
-  "subtitles.deathtaxes.misc.teleport": "Something teleports"
+  "subtitles.deathtaxes.misc.teleport": "Something teleports",
+  "subtitles.deathtaxes.misc.flies": "Flies buzzing"
 }

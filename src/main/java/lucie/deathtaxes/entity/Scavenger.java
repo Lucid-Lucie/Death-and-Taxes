@@ -120,10 +120,17 @@ public class Scavenger extends PathfinderMob implements Merchant
 
         if (id == 22)
         {
+            // Spawn fly particle.
             double x = this.getX() + this.random.nextDouble() * (double) 5.0F - (double) 2.5F;
             double y = this.getY() + this.random.nextDouble() * (double) 2.5F;
             double z = this.getZ() + this.random.nextDouble() * (double) 5.0F - (double) 2.5F;
             this.level().addParticle((SimpleParticleType) ParticleTypeRegistry.FLY.get(), x, y, z, 0.0F, 0.0F, 0.0F);
+
+            // Play buzzing sounds.
+            if (this.random.nextInt(8) == 0)
+            {
+                this.level().playLocalSound(this, SoundEventRegistry.FLIES_BUZZING.value(), SoundSource.NEUTRAL, 0.25F, 1.0F);
+            }
         }
         else if (id == 23)
         {
