@@ -14,6 +14,8 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.profiling.Profiler;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -54,9 +56,9 @@ public class Scavenger extends PathfinderMob implements Merchant
     @Nullable
     public MerchantOffers merchantOffers;
 
-    private long despawnDelay = 0;
+    private long unhappyCounter;
 
-    private static final EntityDataAccessor<Long> DATA_UNHAPPY_COUNTER = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.LONG);
+    private long despawnDelay = 0;
 
     private static final EntityDataAccessor<Long> DATA_HANDS_RAISED = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.LONG);
 
@@ -137,7 +139,7 @@ public class Scavenger extends PathfinderMob implements Merchant
         renderState.attackAnim = this.getAttackAnim(partialTick);
         renderState.isAggressive = this.isAggressive();
         renderState.isDramatic = this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE);
-        renderState.isUnhappy = this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER) > this.level().getGameTime();
+        renderState.isUnhappy = this.unhappyCounter > this.level().getGameTime();
         renderState.isHandsRaised = this.entityData.get(Scavenger.DATA_HANDS_RAISED) > this.level().getGameTime();
     }
 
@@ -186,12 +188,21 @@ public class Scavenger extends PathfinderMob implements Merchant
     {
         super.handleEntityEvent(id);
 
-        if (id == 0)
+        if (id == 22)
         {
             double x = this.getX() + this.random.nextDouble() * (double) 5.0F - (double) 2.5F;
             double y = this.getY() + this.random.nextDouble() * (double) 2.5F;
             double z = this.getZ() + this.random.nextDouble() * (double) 5.0F - (double) 2.5F;
             this.level().addParticle((SimpleParticleType) ParticleTypeRegistry.FLY.get(), x, y, z, 0.0F, 0.0F, 0.0F);
+        }
+        else if (id == 23)
+        {
+            if (this.level().getGameTime() > this.unhappyCounter)
+            {
+                this.unhappyCounter = this.level().getGameTime() + 40;
+                this.ambientSoundTime = 0;
+                this.level().playLocalSound(this, SoundEventRegistry.SCAVENGER_NO.value(), SoundSource.NEUTRAL, 1.0F, 1.0F);
+            }
         }
     }
 
@@ -200,18 +211,6 @@ public class Scavenger extends PathfinderMob implements Merchant
     public boolean canBeAffected(@Nonnull MobEffectInstance effectInstance)
     {
         return !MobEffects.WITHER.equals(effectInstance.getEffect()) && super.canBeAffected(effectInstance);
-    }
-
-    public void setUnhappy()
-    {
-        long time = this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER);
-
-        if (this.level().getGameTime() > time)
-        {
-            this.ambientSoundTime = 0;
-            this.entityData.set(Scavenger.DATA_UNHAPPY_COUNTER, this.level().getGameTime() + 40);
-            this.makeSound(SoundEventRegistry.SCAVENGER_NO.value());
-        }
     }
 
     public ItemStack getDisplayItem()
@@ -279,7 +278,7 @@ public class Scavenger extends PathfinderMob implements Merchant
                 if (this.getOffers().isEmpty())
                 {
                     // Shake head.
-                    this.setUnhappy();
+                    this.level().broadcastEntityEvent(this, (byte)23);
                 }
                 else
                 {
@@ -358,7 +357,6 @@ public class Scavenger extends PathfinderMob implements Merchant
     {
         super.defineSynchedData(builder);
         builder.define(Scavenger.DATA_HANDS_RAISED, 0L);
-        builder.define(Scavenger.DATA_UNHAPPY_COUNTER, 0L);
         builder.define(Scavenger.DATA_DRAMATIC_ENTRANCE, false);
         builder.define(Scavenger.DATA_DISPLAY_ITEM, ItemStack.EMPTY);
     }
@@ -367,7 +365,6 @@ public class Scavenger extends PathfinderMob implements Merchant
     protected void addAdditionalSaveData(@Nonnull ValueOutput output)
     {
         super.addAdditionalSaveData(output);
-        output.putLong("UnhappyCounter", this.entityData.get(Scavenger.DATA_UNHAPPY_COUNTER));
         output.putLong("HandsRaised", this.entityData.get(Scavenger.DATA_HANDS_RAISED));
         output.putBoolean("DramaticEntrance", this.entityData.get(Scavenger.DATA_DRAMATIC_ENTRANCE));
         output.putLong("DespawnDelay", this.despawnDelay);
@@ -378,7 +375,6 @@ public class Scavenger extends PathfinderMob implements Merchant
     protected void readAdditionalSaveData(@Nonnull ValueInput output)
     {
         super.readAdditionalSaveData(output);
-        this.entityData.set(Scavenger.DATA_UNHAPPY_COUNTER, output.getLongOr("UnhappyCounter", 0L));
         this.entityData.set(Scavenger.DATA_HANDS_RAISED, output.getLongOr("HandsRaised", 0L));
         this.entityData.set(Scavenger.DATA_DRAMATIC_ENTRANCE, output.getBooleanOr("DramaticEntrance", false));
         this.despawnDelay = output.getLongOr("DespawnDelay", 0L);

@@ -65,7 +65,7 @@ public class FollowTradingPlayer extends Behavior<Scavenger>
         // Spawn flies while trading.
         if (gameTime % 5 == 0 && level.random.nextBoolean())
         {
-            level.broadcastEntityEvent(owner, (byte)0);
+            level.broadcastEntityEvent(owner, (byte)22);
         }
     }
 
