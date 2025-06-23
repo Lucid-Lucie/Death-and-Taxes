@@ -11,6 +11,7 @@ import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
+import net.minecraft.world.entity.ambient.Bat;
 
 import javax.annotation.Nonnull;
 import java.util.Optional;
@@ -49,11 +50,13 @@ public class DramaticEntrance extends Behavior<Scavenger>
         // Spawn two bats.
         for (int i = 0; i < 2; i++)
         {
-            final int index = i;
-            Optional.ofNullable(EntityType.BAT.spawn(level.getLevel(), entity.blockPosition().above(), MobSpawnType.TRIGGERED)).ifPresent(bat -> {
+            Bat bat = EntityType.BAT.spawn(level.getLevel(), entity.blockPosition().above(), MobSpawnType.TRIGGERED);
+            if (bat != null)
+            {
+                final int index = i;
                 bat.getCapability(DespawnTimerCapability.DESPAWN_TIMER_CAPABILITY).ifPresent(cap -> cap.despawnTime = gameTime + 120 + (10 * index));
                 bat.restrictTo(entity.blockPosition(), 16);
-            });
+            }
         }
     }
 

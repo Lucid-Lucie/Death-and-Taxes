@@ -63,10 +63,7 @@ public class PlayerHooks
     public static void checkDrops(ServerLevel level, ServerPlayer player)
     {
         // Check if the player has any dropped loot.
-        player.getCapability(DroppedLootCapability.DROPPED_LOOT_CAPABILITY).filter(cap -> !cap.droppedLoot.isEmpty()).ifPresent(cap -> {
-                System.out.println("test");
-                PlayerHooks.spawn(player, level, cap.droppedLoot);
-        });
+        player.getCapability(DroppedLootCapability.DROPPED_LOOT_CAPABILITY).filter(cap -> !cap.droppedLoot.isEmpty()).ifPresent(cap -> PlayerHooks.spawn(player, level, cap.droppedLoot));
 
         // Clear the dropped loot capability.
         player.getCapability(DroppedLootCapability.DROPPED_LOOT_CAPABILITY).ifPresent(cap -> cap.droppedLoot = new ArrayList<>());
@@ -76,10 +73,9 @@ public class PlayerHooks
 
     private static void spawn(ServerPlayer player, ServerLevel level, List<ItemStack> contents)
     {
-        System.out.println("Spawning Scavenger...");
         // Generate merchant offers from the item container.
         MerchantOffers offers = ItemEvaluation.evaluateItems(player, level, contents);
-        System.out.println(offers.isEmpty());
+
         // Spawn Scavenger.
         if (!offers.isEmpty())
         {

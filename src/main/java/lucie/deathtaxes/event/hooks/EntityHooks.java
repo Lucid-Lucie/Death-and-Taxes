@@ -9,7 +9,7 @@ public class EntityHooks
 {
     public static void despawnEntity(Level level, LivingEntity entity)
     {
-        entity.getCapability(DespawnTimerCapability.DESPAWN_TIMER_CAPABILITY).filter(cap -> cap.despawnTime > level.getGameTime()).ifPresent(cap -> {
+        entity.getCapability(DespawnTimerCapability.DESPAWN_TIMER_CAPABILITY).filter(cap -> level.getGameTime() > cap.despawnTime).ifPresent(cap -> {
             level.broadcastEntityEvent(entity, (byte) 60);
             entity.playSound(SoundEventRegistry.SOMETHING_TELEPORTS.get());
             entity.discard();

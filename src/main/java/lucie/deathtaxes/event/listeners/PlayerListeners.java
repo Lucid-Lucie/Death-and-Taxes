@@ -34,7 +34,6 @@ public class PlayerListeners
     @SubscribeEvent
     public static void onLivingDrops(LivingDropsEvent event)
     {
-        System.out.println("onLivingDrops: Loaded");
         if (event.getEntity().getType().equals(EntityType.PLAYER))
         {
             ServerPlayer player = (ServerPlayer) event.getEntity();
@@ -45,14 +44,12 @@ public class PlayerListeners
     @SubscribeEvent
     public static void onPlayerClone(PlayerEvent.Clone event)
     {
-        System.out.println("onPlayerClone: Loaded");
         PlayerHooks.copyDrops(event.getOriginal(), event.getEntity(), event.isWasDeath());
     }
 
     @SubscribeEvent
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event)
     {
-        System.out.println("onPlayerRespawn: Loaded");
         ServerPlayer player = (ServerPlayer) event.getEntity();
         PlayerHooks.checkDrops((ServerLevel) player.level(), player);
     }

@@ -7,11 +7,6 @@ public class DespawnTimerInitializer implements INBTSerializable<CompoundTag>
 {
     public long despawnTime = 0L;
 
-    public void copyFrom(DespawnTimerInitializer other)
-    {
-        this.despawnTime = other.despawnTime;
-    }
-
     @Override
     public CompoundTag serializeNBT()
     {
