@@ -81,7 +81,7 @@ neoForge {
 
         // applies to all the run configs above
         configureEach {
-            jvmArgument('-XX:+AllowEnhancedClassRedefinition')
+            systemProperty 'java.vm.extraArguments', '-XX:+AllowEnhancedClassRedefinition'
             // Recommended logging data for a userdev environment
             // The markers can be added/remove as needed separated by commas.
             // "SCAN": For mods scan.

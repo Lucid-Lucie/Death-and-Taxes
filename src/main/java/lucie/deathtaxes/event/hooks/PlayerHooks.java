@@ -105,7 +105,7 @@ public class PlayerHooks
             Optional.ofNullable(EntityTypeRegistry.SCAVENGER.value().spawn(level, spawnpoint, EntitySpawnReason.TRIGGERED)).ifPresent(scavenger ->
             {
                 scavenger.merchantOffers = offers;
-                scavenger.setHomeTo(target, 16);
+                scavenger.restrictTo(target, 16);
             });
         }
     }

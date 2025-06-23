@@ -52,7 +52,7 @@ public class DramaticEntrance extends Behavior<Scavenger>
             final int index = i;
             Optional.ofNullable(EntityType.BAT.spawn(level.getLevel(), entity.blockPosition().above(), EntitySpawnReason.TRIGGERED)).ifPresent(bat -> {
                 bat.setData(AttachmentTypeRegistry.DESPAWN_TIME.get(), gameTime + 120 + (10 * index));
-                bat.setHomeTo(entity.blockPosition(), 16);
+                bat.restrictTo(entity.blockPosition(), 16);
             });
         }
     }

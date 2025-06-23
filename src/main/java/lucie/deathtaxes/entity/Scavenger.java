@@ -1,12 +1,12 @@
 package lucie.deathtaxes.entity;
 
 import com.mojang.serialization.Dynamic;
-import lucie.deathtaxes.client.state.ScavengerRenderState;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import lucie.deathtaxes.registry.SoundEventRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -36,8 +36,6 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -308,7 +306,7 @@ public class Scavenger extends PathfinderMob implements Merchant
         else
         {
             // Fix scavenger pathing when no home is set.
-            this.setHomeTo(this.blockPosition(), 16);
+            this.restrictTo(this.blockPosition(), 16);
         }
 
         return super.finalizeSpawn(level, difficulty, spawnReason, spawnGroupData);
@@ -329,19 +327,19 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    protected void addAdditionalSaveData(@Nonnull ValueOutput output)
+    public void addAdditionalSaveData(@Nonnull CompoundTag compoundTag)
     {
-        super.addAdditionalSaveData(output);
-        output.putLong("DespawnDelay", this.despawnDelay);
-        output.storeNullable("MerchantOffers", MerchantOffers.CODEC, this.merchantOffers);
+        super.addAdditionalSaveData(compoundTag);
+        compoundTag.putLong("DespawnDelay", this.despawnDelay);
+        compoundTag.storeNullable("MerchantOffers", MerchantOffers.CODEC, this.merchantOffers);
     }
 
     @Override
-    protected void readAdditionalSaveData(@Nonnull ValueInput output)
+    public void readAdditionalSaveData(@Nonnull CompoundTag compoundTag)
     {
-        super.readAdditionalSaveData(output);
-        this.despawnDelay = output.getLongOr("DespawnDelay", 0L);
-        this.merchantOffers = output.read("MerchantOffers", MerchantOffers.CODEC).orElse(null);
+        super.readAdditionalSaveData(compoundTag);
+        this.despawnDelay = compoundTag.getLongOr("DespawnDelay", 0L);
+        this.merchantOffers = compoundTag.read("MerchantOffers", MerchantOffers.CODEC).orElse(null);
     }
 
     /* Merchant */
@@ -437,9 +435,9 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    public void setHomeTo(@Nonnull BlockPos blockPos, int distance)
+    public void restrictTo(@Nonnull BlockPos blockPos, int distance)
     {
-        super.setHomeTo(blockPos, distance);
+        super.restrictTo(blockPos, distance);
         this.brain.setMemory(MemoryModuleType.HOME, GlobalPos.of(this.level().dimension(), blockPos));
     }
 }
