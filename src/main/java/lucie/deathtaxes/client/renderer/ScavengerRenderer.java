@@ -1,5 +1,6 @@
 package lucie.deathtaxes.client.renderer;
 
+import com.mojang.blaze3d.vertex.PoseStack;
 import lucie.deathtaxes.DeathTaxes;
 import lucie.deathtaxes.client.layer.ScavengerOuterLayer;
 import lucie.deathtaxes.client.model.ScavengerModel;
@@ -18,6 +19,12 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerModel>
     {
         super(context, new ScavengerModel(context.bakeLayer(ScavengerModel.LAYER_LOCATION)), 0.5F);
         this.addLayer(new ScavengerOuterLayer<>(this, context));
+    }
+
+    @Override
+    protected void scale(@Nonnull Scavenger scavenger, @Nonnull PoseStack poseStack, float partialTick)
+    {
+        poseStack.scale(0.9375F, 0.9375F, 0.9375F);
     }
 
     @Nonnull

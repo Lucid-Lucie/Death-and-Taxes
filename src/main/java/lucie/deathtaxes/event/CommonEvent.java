@@ -49,7 +49,6 @@ public class CommonEvent
         if (event.getPackType() == PackType.CLIENT_RESOURCES)
         {
             Path path = ModList.get().getModFileById(DeathTaxes.MOD_ID).getFile().findResource("packs/alternate_spawn_egg");
-            System.out.println("Path: " + path);
             Pack pack = Pack.readMetaAndCreate("packs/alternate_spawn_egg", Component.translatable("pack." + DeathTaxes.MOD_ID + ".alternate_spawn_egg.title"), false,
                     id -> new PathPackResources(id, path, true), PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
             event.addRepositorySource(packConsumer -> packConsumer.accept(pack));

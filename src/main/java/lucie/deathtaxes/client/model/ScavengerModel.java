@@ -50,7 +50,7 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
 
         // Body
         partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 18).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 12.0F, 6.0F, new CubeDeformation(0.0F))
-                .texOffs(0, 36).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 18.0F, 6.0F, new CubeDeformation(0.5F)), PartPose.offset(0.0F, 0.0F, 0.0F));
+                .texOffs(0, 36).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 18.0F, 6.0F, new CubeDeformation(0.25F)), PartPose.offset(0.0F, 0.0F, 0.0F));
 
         // Legs
         partdefinition.addOrReplaceChild("right_leg", CubeListBuilder.create().texOffs(0, 20).addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(-2.0F, 12.0F, 0.0F));
@@ -65,7 +65,7 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
 
         // Crossed arms
         partdefinition.addOrReplaceChild("crossed_arms", CubeListBuilder.create().texOffs(44, 24).addBox(-8.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
-                .texOffs(44, 24).mirror().addBox(4.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false)
+                .texOffs(44, 24).mirror().addBox(4.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
                 .texOffs(38, 16).addBox(-4.0F, 2.0F, -2.0F, 8.0F, 4.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 2.0F, 0.0F));
 
         return LayerDefinition.create(meshdefinition, 64, 64);
@@ -80,13 +80,16 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
     @Override
     public void setupAnim(@Nonnull Scavenger scavenger, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch)
     {
-        this.crossedArms.visible = false;
+        Scavenger.Pose pose = scavenger.getPoseData();
+
+        this.crossedArms.visible = pose.isArmsCrossed();
+        this.arms.visible = !pose.isArmsCrossed();
 
         // Looking directions
         this.head.yRot = netHeadYaw * ((float)Math.PI / 180F);
         this.head.xRot = headPitch * ((float)Math.PI / 180F);
 
-        // Walking animation.
+        // Walking animation
         this.rightArm.xRot = Mth.cos(limbSwing * 0.6662F + (float)Math.PI) * 2.0F * limbSwingAmount * 0.5F;
         this.rightArm.yRot = 0.0F;
         this.rightArm.zRot = 0.0F;
@@ -99,6 +102,9 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
         this.leftLeg.xRot = Mth.cos(limbSwing * 0.6662F + (float)Math.PI) * 1.4F * limbSwingAmount * 0.5F;
         this.leftLeg.yRot = 0.0F;
         this.leftLeg.zRot = 0.0F;
+
+        // Crossed arms animation
+        this.crossedArms.xRot = (float) Math.toRadians(-45);
     }
 
     @Nonnull
