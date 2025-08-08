@@ -1,25 +1,26 @@
 package lucie.deathtaxes.entity;
 
 import com.mojang.serialization.Dynamic;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.syncher.EntityDataAccessor;
-import net.minecraft.network.syncher.EntityDataSerializer;
-import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.ServerLevelAccessor;
 
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 public class Scavenger extends PathfinderMob
 {
-
     public Scavenger(EntityType<? extends PathfinderMob> entityType, Level level)
     {
         super(entityType, level);
@@ -69,6 +70,24 @@ public class Scavenger extends PathfinderMob
         profilerfiller.pop();
     }
 
+    @Nullable
+    @Override
+    @SuppressWarnings("deprecation")
+    public SpawnGroupData finalizeSpawn(@Nonnull ServerLevelAccessor level, @Nonnull DifficultyInstance difficulty, @Nonnull MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag compoundTag)
+    {
+        this.populateDefaultEquipmentSlots(level.getRandom(), difficulty);
+
+        return super.finalizeSpawn(level, difficulty, reason, spawnData, compoundTag);
+    }
+
+    @Override
+    protected void populateDefaultEquipmentSlots(@Nonnull RandomSource random, @Nonnull DifficultyInstance difficulty)
+    {
+        this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SHOVEL));
+
+        super.populateDefaultEquipmentSlots(random, difficulty);
+    }
+
     public Pose getPoseData()
     {
         return Pose.IDLE;
@@ -76,30 +95,10 @@ public class Scavenger extends PathfinderMob
 
     public enum Pose
     {
-        IDLE(true),
-        ATTACKING(false),
-        TRADING(true);
-
-        private final boolean isArmsCrossed;
-
-        Pose(boolean isArmsCrossed)
-        {
-            this.isArmsCrossed = isArmsCrossed;;
-        }
-
-        public boolean isArmsCrossed()
-        {
-            return this.isArmsCrossed;
-        }
-
-        public static void write(FriendlyByteBuf buffer, Pose pose)
-        {
-            buffer.writeByte(pose.ordinal());
-        }
-
-        public static Pose read(FriendlyByteBuf buffer)
-        {
-            return values()[buffer.readByte()];
-        }
+        OFFERING,
+        ATTACKING,
+        APPEARING,
+        CONSUMING,
+        IDLE
     }
 }

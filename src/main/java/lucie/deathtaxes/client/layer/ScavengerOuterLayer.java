@@ -19,7 +19,9 @@ import javax.annotation.Nonnull;
 
 public class ScavengerOuterLayer<T extends Scavenger, M extends EntityModel<T>> extends RenderLayer<T, M>
 {
-    private static final ResourceLocation TEXTURE = DeathTaxes.withModNamespace("textures/entity/scavenger_outer_layer.png");
+    private static final ResourceLocation TEXTURE_OPEN = DeathTaxes.withModNamespace("textures/entity/scavenger_outer_layer_open.png");
+
+    private static final ResourceLocation TEXTURE_CLOSED = DeathTaxes.withModNamespace("textures/entity/scavenger_outer_layer_closed.png");
 
     public static final ModelLayerLocation LAYER_LOCATION = new ModelLayerLocation(DeathTaxes.withModNamespace("scavenger"), "outer_layer");
 
@@ -34,7 +36,8 @@ public class ScavengerOuterLayer<T extends Scavenger, M extends EntityModel<T>> 
     @Override
     public void render(@Nonnull PoseStack poseStack, MultiBufferSource multiBufferSource, int packedLight, @Nonnull T scavenger, float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch)
     {
-        VertexConsumer consumer = multiBufferSource.getBuffer(RenderType.entityCutoutNoCull(TEXTURE));
+        ResourceLocation texture = scavenger.getPoseData() == Scavenger.Pose.OFFERING ? TEXTURE_OPEN : TEXTURE_CLOSED;
+        VertexConsumer consumer = multiBufferSource.getBuffer(RenderType.entityCutoutNoCull(texture));
         int overlay = LivingEntityRenderer.getOverlayCoords(scavenger, 0.0F);
         this.clothing.setupAnim(scavenger, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);
         this.clothing.renderToBuffer(poseStack, consumer, packedLight, overlay, 1.0F, 1.0F, 1.0F, 1.0F);
