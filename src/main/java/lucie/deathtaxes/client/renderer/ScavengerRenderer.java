@@ -2,8 +2,10 @@ package lucie.deathtaxes.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import lucie.deathtaxes.DeathTaxes;
+import lucie.deathtaxes.client.layer.ScavengerCoatLayer;
+import lucie.deathtaxes.client.layer.ScavengerHatLayer;
 import lucie.deathtaxes.client.layer.ScavengerItemLayer;
-import lucie.deathtaxes.client.layer.ScavengerOuterLayer;
+import lucie.deathtaxes.client.layer.ScavengerLanternLayer;
 import lucie.deathtaxes.client.model.ScavengerModel;
 import lucie.deathtaxes.entity.Scavenger;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -21,8 +23,10 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerModel>
     public ScavengerRenderer(EntityRendererProvider.Context context)
     {
         super(context, new ScavengerModel(context.bakeLayer(ScavengerModel.LAYER_LOCATION)), 0.5F);
-        this.addLayer(new ScavengerOuterLayer<>(this, context));
+        this.addLayer(new ScavengerCoatLayer<>(this, new ScavengerModel(context.bakeLayer(ScavengerCoatLayer.LAYER_LOCATION))));
+        this.addLayer(new ScavengerHatLayer<>(this, context.bakeLayer(ScavengerHatLayer.LAYER_LOCATION)));
         this.addLayer(new ScavengerItemLayer(this, context.getItemInHandRenderer()));
+        this.addLayer(new ScavengerLanternLayer<>(this, context.getBlockRenderDispatcher()));
         this.addLayer(new ItemInHandLayer<>(this, context.getItemInHandRenderer())
         {
             @Override

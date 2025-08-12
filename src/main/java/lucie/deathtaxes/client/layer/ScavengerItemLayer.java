@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
 import javax.annotation.Nonnull;
@@ -41,12 +42,14 @@ public class ScavengerItemLayer extends RenderLayer<Scavenger, ScavengerModel>
 
         if (pose == Scavenger.Pose.CONSUMING)
         {
+            ItemStack itemstack = scavenger.getConsumingItemstack();
+
             poseStack.pushPose();
             this.getParentModel().translateToArms(poseStack);
             poseStack.mulPose(Axis.XP.rotation(0.75F));
             poseStack.translate(0.0F, 0.2F, -0.34F);
             poseStack.mulPose(Axis.XP.rotation((float)Math.PI));
-            this.itemRenderer.renderItem(scavenger, Items.MILK_BUCKET.getDefaultInstance(), ItemDisplayContext.GROUND, false, poseStack, bufferSource, packedLight);
+            this.itemRenderer.renderItem(scavenger, itemstack, ItemDisplayContext.GROUND, false, poseStack, bufferSource, packedLight);
             poseStack.popPose();
         }
     }

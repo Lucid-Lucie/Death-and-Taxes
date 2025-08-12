@@ -2,6 +2,9 @@ package lucie.deathtaxes.entity;
 
 import com.mojang.serialization.Dynamic;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.network.syncher.EntityDataSerializers;
+import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -21,6 +24,8 @@ import javax.annotation.Nullable;
 
 public class Scavenger extends PathfinderMob
 {
+    private static final EntityDataAccessor<ItemStack> CONSUMING_ITEMSTACK = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.ITEM_STACK);
+
     public Scavenger(EntityType<? extends PathfinderMob> entityType, Level level)
     {
         super(entityType, level);
@@ -88,8 +93,40 @@ public class Scavenger extends PathfinderMob
         super.populateDefaultEquipmentSlots(random, difficulty);
     }
 
+    @Override
+    protected void defineSynchedData()
+    {
+        super.defineSynchedData();
+        this.entityData.define(CONSUMING_ITEMSTACK, ItemStack.EMPTY);
+    }
+
+    public void setConsumingItemstack(ItemStack itemstack)
+    {
+        this.entityData.set(CONSUMING_ITEMSTACK, itemstack);
+    }
+
+    public ItemStack getConsumingItemstack()
+    {
+        return this.entityData.get(CONSUMING_ITEMSTACK);
+    }
+
     public Pose getPoseData()
     {
+        if (this.isAggressive())
+        {
+            return Pose.ATTACKING;
+        }
+
+        if (!this.getConsumingItemstack().isEmpty())
+        {
+            return Pose.CONSUMING;
+        }
+
+        if (this.level().getDayTime() >= 13000L && this.level().getDayTime() <= 24000L)
+        {
+            return Pose.LANTERN;
+        }
+
         return Pose.IDLE;
     }
 
@@ -99,6 +136,7 @@ public class Scavenger extends PathfinderMob
         ATTACKING,
         APPEARING,
         CONSUMING,
+        LANTERN,
         IDLE
     }
 }

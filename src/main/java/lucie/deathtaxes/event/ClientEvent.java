@@ -1,7 +1,8 @@
 package lucie.deathtaxes.event;
 
 import lucie.deathtaxes.DeathTaxes;
-import lucie.deathtaxes.client.layer.ScavengerOuterLayer;
+import lucie.deathtaxes.client.layer.ScavengerCoatLayer;
+import lucie.deathtaxes.client.layer.ScavengerHatLayer;
 import lucie.deathtaxes.client.model.ScavengerModel;
 import lucie.deathtaxes.client.renderer.ScavengerRenderer;
 import lucie.deathtaxes.registry.EntityTypeRegistry;
@@ -17,7 +18,8 @@ public class ClientEvent
     public static void onRegisterLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event)
     {
         event.registerLayerDefinition(ScavengerModel.LAYER_LOCATION, ScavengerModel::createBodyLayer);
-        event.registerLayerDefinition(ScavengerOuterLayer.LAYER_LOCATION, ScavengerModel::createBodyLayer);
+        event.registerLayerDefinition(ScavengerCoatLayer.LAYER_LOCATION, ScavengerModel::createBodyLayer);
+        event.registerLayerDefinition(ScavengerHatLayer.LAYER_LOCATION, ScavengerHatLayer::createBodyLayer);
     }
 
     @SubscribeEvent

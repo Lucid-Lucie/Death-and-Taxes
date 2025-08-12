@@ -43,16 +43,14 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
         MeshDefinition meshdefinition = new MeshDefinition();
         PartDefinition partdefinition = meshdefinition.getRoot();
 
-        // Head, hat, and nose
-        PartDefinition head = partdefinition.addOrReplaceChild("head", CubeListBuilder.create().texOffs(0, 0).addBox(-4.0F, -10.0F, -4.0F, 8.0F, 10.0F, 8.0F, new CubeDeformation(0.0F))
-                .texOffs(32, 36).addBox(-4.0F, -14.0F, -4.0F, 8.0F, 7.0F, 8.0F, new CubeDeformation(0.01F))
-                .texOffs(28, 53).addBox(-4.5F, -9.0F, -4.5F, 9.0F, 2.0F, 9.0F, new CubeDeformation(0.01F)), PartPose.offset(0.0F, 0.0F, 0.0F));
+        // Head and nose
+        PartDefinition head = partdefinition.addOrReplaceChild("head", CubeListBuilder.create().texOffs(0, 0).addBox(-4.0F, -10.0F, -4.0F, 8.0F, 10.0F, 8.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
         head.addOrReplaceChild("nose", CubeListBuilder.create().texOffs(24, 0).addBox(-1.0F, -1.0F, -6.0F, 2.0F, 4.0F, 2.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, -2.0F, 0.0F));
 
         // Body and pocket
         PartDefinition body = partdefinition.addOrReplaceChild("body", CubeListBuilder.create().texOffs(16, 18).addBox(-4.0F, 0.0F, -3.0F, 8.0F, 12.0F, 6.0F, new CubeDeformation(0.0F))
                 .texOffs(0, 36).addBox(-4.5F, -0.25F, -3.5F, 9.0F, 18.0F, 7.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 0.0F, 0.0F));
-        body.addOrReplaceChild("pocket", CubeListBuilder.create().texOffs(7, 39).mirror().addBox(0.0F, -9.25F, -4.0F, 0.0F, 18.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offsetAndRotation(3.5F, 9.0F, -3.5F, 0.0F, -0.7854F, 0.0F));
+        body.addOrReplaceChild("pocket", CubeListBuilder.create().texOffs(32, 43).mirror().addBox(-4.0F, -9.0F, 0.0F, 4.0F, 18.0F, 0.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(3.5F, 8.75F, -3.5F));
 
         // Legs
         partdefinition.addOrReplaceChild("left_leg", CubeListBuilder.create().texOffs(0, 20).mirror().addBox(-2.0F, 0.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false), PartPose.offset(2.0F, 12.0F, 0.0F));
@@ -66,9 +64,11 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
                 .texOffs(48, 0).addBox(-3.0F, -2.0F, -2.0F, 4.0F, 12.0F, 4.0F, new CubeDeformation(0.25F)), PartPose.offset(-5.0F, 2.0F, 0.0F));
 
         // Crossed arms
-        partdefinition.addOrReplaceChild("crossed_arms", CubeListBuilder.create().texOffs(44, 24).addBox(-8.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
+        PartDefinition crossed_arms = partdefinition.addOrReplaceChild("crossed_arms", CubeListBuilder.create().texOffs(44, 24).addBox(-8.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F))
                 .texOffs(44, 24).mirror().addBox(4.0F, -2.0F, -2.0F, 4.0F, 8.0F, 4.0F, new CubeDeformation(0.0F)).mirror(false)
                 .texOffs(38, 16).addBox(-4.0F, 2.0F, -2.0F, 8.0F, 4.0F, 4.0F, new CubeDeformation(0.0F)), PartPose.offset(0.0F, 2.0F, 0.0F));
+        crossed_arms.addOrReplaceChild("left_sleeve", CubeListBuilder.create().texOffs(48, 6).addBox(-2.0F, 3.0F, -2.0F, 4.0F, 2.0F, 4.0F, new CubeDeformation(0.25F)), PartPose.offsetAndRotation(0.0F, 4.0F, 0.0F, 0.0F, -1.5708F, -1.5708F));
+        crossed_arms.addOrReplaceChild("right_sleeve", CubeListBuilder.create().texOffs(48, 6).mirror().addBox(-2.0F, -1.0F, -2.0F, 4.0F, 2.0F, 4.0F, new CubeDeformation(0.25F)).mirror(false), PartPose.offsetAndRotation(-4.0F, 4.0F, 0.0F, 0.0F, 1.5708F, 1.5708F));
 
         return LayerDefinition.create(meshdefinition, 64, 64);
     }
@@ -95,12 +95,21 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
     public void setupAnim(@Nonnull Scavenger scavenger, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch)
     {
         Scavenger.Pose pose = scavenger.getPoseData();
+        HumanoidArm arm = scavenger.getMainArm();
 
         // Reset extra additions
         this.crossedArms.visible = false;
-        this.arms.visible = false;
         this.pocket.visible = false;
+        this.arms.visible = false;
         this.nose.xRot = 0.0F;
+        this.leftArm.x = 5.0F;
+        this.rightArm.x = -5.0F;
+        this.leftArm.xRot = 0.0F;
+        this.rightArm.xRot = 0.0F;
+        this.leftArm.zRot = 0.0F;
+        this.rightArm.zRot = 0.0F;
+        this.leftArm.yRot = 0.0F;
+        this.rightArm.yRot = 0.0F;
 
         // Looking directions
         this.head.yRot = netHeadYaw * ((float)Math.PI / 180F);
@@ -120,6 +129,7 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
 
             // Stretch left arm along coat
             this.pocket.visible = true;
+            this.pocket.yRot = (float) Math.toRadians(-125.0D);
             this.leftArm.xRot = (float) Math.toRadians(-45.0D);
             this.leftArm.yRot = (float) Math.toRadians(-45.0D);
 
@@ -156,18 +166,16 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
             this.arms.visible = true;
 
             // Wave arms above head
-            this.rightArm.z = 0.0F;
-            this.rightArm.x = -3.5F;
-            this.rightArm.y = 1.0F;
-            this.leftArm.z = 0.0F;
-            this.leftArm.x = 3.5F;
-            this.leftArm.y = 1.0F;
-            this.leftArm.yRot = (float) Math.toRadians(180);
-            this.rightArm.yRot = (float) Math.toRadians(180);
-            this.rightArm.xRot = Mth.cos(ageInTicks * 0.65F) * 0.25F;
-            this.leftArm.xRot = Mth.cos(ageInTicks * 0.65F) * 0.25F;
-            this.rightArm.zRot = 2.3561945F;
-            this.leftArm.zRot = -2.3561945F;
+            this.leftArm.x = 4.0F;
+            this.rightArm.x = -4.0F;
+            this.leftArm.zRot = (float) Math.toRadians(45);
+            this.rightArm.zRot = (float) Math.toRadians(-45);
+            this.leftArm.xRot = (float) (Math.toRadians(180) + Mth.cos(ageInTicks * 0.65F) * 0.25F);
+            this.rightArm.xRot = (float) (Math.toRadians(180) + Mth.cos(ageInTicks * 0.65F) * 0.25F);
+
+            // Lift head upwards
+            this.head.yRot = this.body.yRot;
+            this.head.xRot = (float) Math.toRadians(-10);
         }
 
         if (pose == Scavenger.Pose.CONSUMING)
@@ -175,11 +183,27 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
             this.crossedArms.visible = true;
 
             // Eating animation
-            float animation = Mth.abs(Mth.cos(ageInTicks / 7.0F * (float)Math.PI));
+            float animation = Mth.abs(Mth.cos(ageInTicks / 8.0F * (float)Math.PI));
             this.head.yRot = this.body.yRot;
             this.head.xRot = (float) (this.body.xRot - Math.toRadians(-5 + (-5 * animation)));
             this.nose.xRot = (float) Math.toRadians(-10);
             this.crossedArms.xRot = (float) Math.toRadians(-50 + (animation * - 10));
+        }
+
+        if (pose == Scavenger.Pose.LANTERN)
+        {
+            this.arms.visible = true;
+
+            if (arm == HumanoidArm.RIGHT)
+            {
+                this.rightArm.xRot = (float) Math.toRadians(-75);
+                AnimationUtils.bobModelPart(this.leftArm, ageInTicks, -1.0F);
+            }
+            else
+            {
+                this.leftArm.xRot = (float) Math.toRadians(-75);
+                AnimationUtils.bobModelPart(this.rightArm, ageInTicks, 1.0F);
+            }
         }
 
         if (pose == Scavenger.Pose.IDLE)
