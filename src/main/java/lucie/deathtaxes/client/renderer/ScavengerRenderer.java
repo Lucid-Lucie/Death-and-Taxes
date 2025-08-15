@@ -2,10 +2,7 @@ package lucie.deathtaxes.client.renderer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import lucie.deathtaxes.DeathTaxes;
-import lucie.deathtaxes.client.layer.ScavengerCoatLayer;
-import lucie.deathtaxes.client.layer.ScavengerHatLayer;
-import lucie.deathtaxes.client.layer.ScavengerItemLayer;
-import lucie.deathtaxes.client.layer.ScavengerLanternLayer;
+import lucie.deathtaxes.client.layer.*;
 import lucie.deathtaxes.client.model.ScavengerModel;
 import lucie.deathtaxes.entity.Scavenger;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -44,6 +41,17 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerModel>
     protected void scale(@Nonnull Scavenger scavenger, @Nonnull PoseStack poseStack, float partialTick)
     {
         poseStack.scale(0.9375F, 0.9375F, 0.9375F);
+    }
+
+    @Override
+    public void render(@Nonnull Scavenger scavenger, float entityYaw, float partialTicks, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource multiBufferSource, int packedLight)
+    {
+        if (scavenger.getPoseData() == Scavenger.Pose.LANTERN)
+        {
+            packedLight = 200;
+        }
+
+        super.render(scavenger, entityYaw, partialTicks, poseStack, multiBufferSource, packedLight);
     }
 
     @Nonnull

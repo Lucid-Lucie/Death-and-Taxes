@@ -1,12 +1,10 @@
 package lucie.deathtaxes.client.layer;
 
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 import lucie.deathtaxes.entity.Scavenger;
 import net.minecraft.client.model.ArmedModel;
 import net.minecraft.client.model.EntityModel;
-import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -30,14 +28,6 @@ public class ScavengerLanternLayer<T extends Scavenger, M extends EntityModel<T>
     {
         super(renderer);
         this.blockRenderer = blockRenderer;
-    }
-
-    public static void setupAnim(@Nonnull ModelPart lantern, HumanoidArm arm, float ageInTicks)
-    {
-        lantern.xRot = (float) Math.toRadians(90 + ((float) Math.sin(ageInTicks * 0.0625F) * 2.5F));
-        lantern.yRot = (float) Math.toRadians((float) Math.cos(ageInTicks * 0.0625F) * 5.0F);
-        lantern.x = arm == HumanoidArm.RIGHT ? -1.5F : 1.5F;
-        lantern.z = -6.5F;
     }
 
     @Override

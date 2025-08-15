@@ -1,11 +1,15 @@
 package lucie.deathtaxes.entity;
 
 import com.mojang.serialization.Dynamic;
+import lucie.deathtaxes.registry.ParticleTypeRegistry;
+import net.minecraft.client.Minecraft;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.DifficultyInstance;
@@ -73,6 +77,24 @@ public class Scavenger extends PathfinderMob
         profilerfiller.popPush("scavengerActivityUpdate");
         ScavengerAi.updateActivities(this);
         profilerfiller.pop();
+    }
+
+    @Override
+    public void aiStep()
+    {
+        super.aiStep();
+
+        Level level = this.level();
+        long gameTime = level.getGameTime();
+
+        if (this.getPoseData() == Pose.LANTERN && level.isClientSide && gameTime % 10 == 0)
+        {
+            double r = (this.getBbWidth() / 2) + 0.2 + this.level().random.nextDouble() * 0.5;
+            double a = this.level().random.nextDouble() * Math.PI * 2;
+            double y = this.getY() + (this.level().random.nextDouble() * this.getBbHeight());
+
+            this.level().addParticle((SimpleParticleType) ParticleTypeRegistry.EMBER.get(), this.getX() + Math.cos(a) * r, y, this.getZ() + Math.sin(a) * r, 0, 0, 0);
+        }
     }
 
     @Nullable
