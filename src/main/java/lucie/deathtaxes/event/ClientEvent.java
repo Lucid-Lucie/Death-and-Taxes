@@ -5,6 +5,7 @@ import lucie.deathtaxes.client.layer.ScavengerCoatLayer;
 import lucie.deathtaxes.client.layer.ScavengerHatLayer;
 import lucie.deathtaxes.client.model.ScavengerModel;
 import lucie.deathtaxes.client.particle.EmberParticle;
+import lucie.deathtaxes.client.particle.FlyParticle;
 import lucie.deathtaxes.client.renderer.ScavengerRenderer;
 import lucie.deathtaxes.registry.EntityTypeRegistry;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
@@ -35,5 +36,6 @@ public class ClientEvent
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event)
     {
         event.registerSpriteSet(ParticleTypeRegistry.EMBER.get(), EmberParticle.EmberProvider::new);
+        event.registerSpriteSet(ParticleTypeRegistry.FLY.get(), FlyParticle.FlyProvider::new);
     }
 }

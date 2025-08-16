@@ -1,8 +1,11 @@
 package lucie.deathtaxes.entity;
 
 import com.mojang.serialization.Dynamic;
+import lucie.deathtaxes.event.ClientEvent;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -79,21 +82,47 @@ public class Scavenger extends PathfinderMob
         profilerfiller.pop();
     }
 
+    private void customClientAiStep(ClientLevel level)
+    {
+        long gameTime = level.getGameTime();
+
+        // Spawn ember particles
+        if (this.getPoseData() == Pose.LANTERN && gameTime % 10 == 0)
+        {
+            double r = (this.getBbWidth() / 2) + 0.2 + this.level().random.nextDouble() * 0.5;
+            double a = this.level().random.nextDouble() * Math.PI * 2;
+            double y = this.getY() + (this.level().random.nextDouble() * this.getBbHeight());
+            this.level().addParticle((SimpleParticleType) ParticleTypeRegistry.EMBER.get(), this.getX() + Math.cos(a) * r, y, this.getZ() + Math.sin(a) * r, 0, 0, 0);
+        }
+
+        // Spawn fly particles
+        if (this.getPoseData() == Pose.OFFERING && gameTime % 30 == 0)
+        {
+            double x = this.getX() + this.random.nextDouble() * (double) 2.5F - (double) 1.25F;
+            double y = this.getY() + this.random.nextDouble() * (double) 2.5F;
+            double z = this.getZ() + this.random.nextDouble() * (double) 2.5F - (double) 1.25F;
+            this.level().addParticle((SimpleParticleType) ParticleTypeRegistry.FLY.get(), x, y, z, 0.0F, 0.0F, 0.0F);
+        }
+
+        // Spawn glowing particles
+        if (this.getPoseData() == Pose.APPEARING && gameTime % 4 == 0)
+        {
+            float f = this.yBodyRot * ((float)Math.PI / 180F) + Mth.cos((float)this.tickCount * 0.6662F) * 0.5F;
+            float f1 = Mth.cos(f);
+            float f2 = Mth.sin(f);
+            this.level().addParticle(ParticleTypes.ENTITY_EFFECT, this.getX() + (double)f1 * 0.7D, this.getY() + 1.9D, this.getZ() + (double)f2 * 0.7D, 0.6F, 0.6F, 0.4F);
+            this.level().addParticle(ParticleTypes.ENTITY_EFFECT, this.getX() - (double)f1 * 0.7D, this.getY() + 1.9D, this.getZ() - (double)f2 * 0.7D, 0.6F, 0.6F, 0.4F);
+        }
+    }
+
     @Override
     public void aiStep()
     {
         super.aiStep();
 
-        Level level = this.level();
-        long gameTime = level.getGameTime();
-
-        if (this.getPoseData() == Pose.LANTERN && level.isClientSide && gameTime % 10 == 0)
+        if (this.level() instanceof ClientLevel level)
         {
-            double r = (this.getBbWidth() / 2) + 0.2 + this.level().random.nextDouble() * 0.5;
-            double a = this.level().random.nextDouble() * Math.PI * 2;
-            double y = this.getY() + (this.level().random.nextDouble() * this.getBbHeight());
-
-            this.level().addParticle((SimpleParticleType) ParticleTypeRegistry.EMBER.get(), this.getX() + Math.cos(a) * r, y, this.getZ() + Math.sin(a) * r, 0, 0, 0);
+            this.customClientAiStep(level);
         }
     }
 
@@ -149,7 +178,7 @@ public class Scavenger extends PathfinderMob
             return Pose.LANTERN;
         }
 
-        return Pose.IDLE;
+        return Pose.APPEARING;
     }
 
     public enum Pose
