@@ -4,7 +4,6 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Camera;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.*;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.util.Mth;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -15,12 +14,12 @@ import javax.annotation.Nullable;
 
 public class FootprintParticle extends TextureSheetParticle
 {
-    private final float bodyRotation;
+    private final float rotation;
 
-    protected FootprintParticle(ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed)
+    protected FootprintParticle(ClientLevel level, double x, double y, double z, float rotation)
     {
         super(level, x, y, z, 0, 0, 0);
-        this.bodyRotation = (float) xSpeed;
+        this.rotation = rotation;
         this.quadSize *= 2;
         this.lifetime = 80;
         this.hasPhysics = false;
@@ -71,7 +70,7 @@ public class FootprintParticle extends TextureSheetParticle
 
         float size = 0.3f;
         float height = 0.01f;
-        float yawRad = (float)Math.toRadians(this.bodyRotation + 180);
+        float yawRad = (float)Math.toRadians(this.rotation + 180);
 
         float cos = Mth.cos(yawRad);
         float sin = Mth.sin(yawRad);
@@ -105,7 +104,7 @@ public class FootprintParticle extends TextureSheetParticle
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static class Provider implements ParticleProvider<SimpleParticleType>
+    public static class Provider implements ParticleProvider<FootprintParticleOption>
     {
         private final SpriteSet sprite;
 
@@ -116,9 +115,9 @@ public class FootprintParticle extends TextureSheetParticle
 
         @Nullable
         @Override
-        public Particle createParticle(@Nonnull SimpleParticleType type, @Nonnull ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed)
+        public Particle createParticle(@Nonnull FootprintParticleOption type, @Nonnull ClientLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed)
         {
-            FootprintParticle particle = new FootprintParticle(level, x, y, z, xSpeed, ySpeed, zSpeed);
+            FootprintParticle particle = new FootprintParticle(level, x, y, z, type.rotation());
             particle.pickSprite(this.sprite);
             return particle;
         }

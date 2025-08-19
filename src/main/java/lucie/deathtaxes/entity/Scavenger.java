@@ -1,13 +1,12 @@
 package lucie.deathtaxes.entity;
 
 import com.mojang.serialization.Dynamic;
+import lucie.deathtaxes.client.particle.FootprintParticleOption;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
-import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ItemParticleOption;
-import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -59,10 +58,9 @@ public class Scavenger extends PathfinderMob
 
     @Nonnull
     @Override
-    @SuppressWarnings("unchecked")
     protected Brain<?> makeBrain(@Nonnull Dynamic<?> dynamic)
     {
-        return ScavengerAi.makeBrain(this, (Brain<Scavenger>) this.brainProvider().makeBrain(dynamic));
+        return ScavengerAi.makeBrain(this, dynamic);
     }
 
     @Nonnull
@@ -71,6 +69,49 @@ public class Scavenger extends PathfinderMob
     public Brain<Scavenger> getBrain()
     {
         return (Brain<Scavenger>) super.getBrain();
+    }
+
+    @Override
+    public void aiStep()
+    {
+        super.aiStep();
+
+        if (this.level().isClientSide)
+        {
+            long time = this.tickCount;
+            Level level = this.level();
+            BlockPos blockPos = this.getOnPos();
+
+            // Walking leaves muddy footprints
+            if (this.getDeltaMovement().horizontalDistanceSqr() > 0.001 && time % 6 == 0 && level.getBlockState(blockPos).isFaceSturdy(level, blockPos, Direction.UP))
+            {
+                this.spawnFootprintParticle();
+            }
+
+            // Lantern emits embers
+            if (this.getPoseData() == Pose.LANTERN && time % 10 == 0)
+            {
+                this.spawnEmberParticle();
+            }
+
+            // Offering reveals flies inside the coat
+            if (this.getPoseData() == Pose.OFFERING && time % 30 == 0)
+            {
+                this.spawnFlyParticle();
+            }
+
+            // Appearing uses particle style similar to evokers spellcasting
+            if (this.getPoseData() == Pose.APPEARING && time % 4 == 0)
+            {
+                this.spawnGlowingParticle();
+            }
+
+            // Consuming creates item particles of consuming itemstack
+            if (this.getPoseData() == Pose.CONSUMING && time % 8 == 0)
+            {
+                this.spawnConsumeParticle();
+            }
+        }
     }
 
     @Override
@@ -84,88 +125,59 @@ public class Scavenger extends PathfinderMob
         profilerfiller.pop();
     }
 
-    private void customClientAiStep(ClientLevel level)
+    private void spawnEmberParticle()
     {
-        long gameTime = level.getGameTime();
+        double r = (this.getBbWidth() / 2) + 0.2 + this.level().random.nextDouble() * 0.5;
+        double a = this.level().random.nextDouble() * Math.PI * 2;
+        double y = this.getY() + (this.level().random.nextDouble() * this.getBbHeight());
+        this.level().addParticle(ParticleTypeRegistry.EMBER.get(), this.getX() + Math.cos(a) * r, y, this.getZ() + Math.sin(a) * r, 0, 0, 0);
+    }
 
-        // Spawn ember particles
-        if (this.getPoseData() == Pose.LANTERN && gameTime % 10 == 0)
+    private void spawnFlyParticle()
+    {
+        double x = this.getX() + this.random.nextDouble() * (double) 2.5F - (double) 1.25F;
+        double y = this.getY() + this.random.nextDouble() * (double) 2.5F;
+        double z = this.getZ() + this.random.nextDouble() * (double) 2.5F - (double) 1.25F;
+        this.level().addParticle(ParticleTypeRegistry.FLY.get(), x, y, z, 0.0F, 0.0F, 0.0F);
+    }
+
+    private void spawnGlowingParticle()
+    {
+        float f = this.yBodyRot * ((float)Math.PI / 180F) + Mth.cos((float)this.tickCount * 0.6662F) * 0.5F;
+        float f1 = Mth.cos(f);
+        float f2 = Mth.sin(f);
+        this.level().addParticle(ParticleTypes.ENTITY_EFFECT, this.getX() + (double)f1 * 0.7D, this.getY() + 1.9D, this.getZ() + (double)f2 * 0.7D, 0.6F, 0.6F, 0.4F);
+        this.level().addParticle(ParticleTypes.ENTITY_EFFECT, this.getX() - (double)f1 * 0.7D, this.getY() + 1.9D, this.getZ() - (double)f2 * 0.7D, 0.6F, 0.6F, 0.4F);
+    }
+
+    private void spawnConsumeParticle()
+    {
+        ItemStack itemStack = this.getConsumingItemstack();
+
+        if (itemStack.isEmpty())
         {
-            double r = (this.getBbWidth() / 2) + 0.2 + this.level().random.nextDouble() * 0.5;
-            double a = this.level().random.nextDouble() * Math.PI * 2;
-            double y = this.getY() + (this.level().random.nextDouble() * this.getBbHeight());
-            this.level().addParticle((SimpleParticleType) ParticleTypeRegistry.EMBER.get(), this.getX() + Math.cos(a) * r, y, this.getZ() + Math.sin(a) * r, 0, 0, 0);
+            return;
         }
 
-        // Spawn fly particles
-        if (this.getPoseData() == Pose.OFFERING && gameTime % 30 == 0)
+        for (int i = 0; i < 4; i++)
         {
-            double x = this.getX() + this.random.nextDouble() * (double) 2.5F - (double) 1.25F;
-            double y = this.getY() + this.random.nextDouble() * (double) 2.5F;
-            double z = this.getZ() + this.random.nextDouble() * (double) 2.5F - (double) 1.25F;
-            this.level().addParticle((SimpleParticleType) ParticleTypeRegistry.FLY.get(), x, y, z, 0.0F, 0.0F, 0.0F);
-        }
-
-        // Spawn glowing particles
-        if (this.getPoseData() == Pose.APPEARING && gameTime % 4 == 0)
-        {
-            float f = this.yBodyRot * ((float)Math.PI / 180F) + Mth.cos((float)this.tickCount * 0.6662F) * 0.5F;
-            float f1 = Mth.cos(f);
-            float f2 = Mth.sin(f);
-            this.level().addParticle(ParticleTypes.ENTITY_EFFECT, this.getX() + (double)f1 * 0.7D, this.getY() + 1.9D, this.getZ() + (double)f2 * 0.7D, 0.6F, 0.6F, 0.4F);
-            this.level().addParticle(ParticleTypes.ENTITY_EFFECT, this.getX() - (double)f1 * 0.7D, this.getY() + 1.9D, this.getZ() - (double)f2 * 0.7D, 0.6F, 0.6F, 0.4F);
-        }
-
-        // Spawn eating particles
-        if (this.getPoseData() == Pose.CONSUMING && gameTime % 8 == 0)
-        {
-            ItemStack itemStack = this.getConsumingItemstack();
-
-            if (!itemStack.isEmpty())
-            {
-                for (int i = 0; i < 4; i++)
-                {
-                    Vec3 velocity = new Vec3((this.random.nextFloat() - 0.5F) * 0.1F,this.random.nextFloat() * 0.1F + 0.05F,(this.random.nextFloat() - 0.5F) * 0.1F);
-                    Vec3 forwardOffset = new Vec3(0, 0, 0.5).yRot(-this.yBodyRot * ((float)Math.PI / 180F));
-                    Vec3 mouthPos = this.position().add(0, this.getBbHeight() * 0.85F, 0).add(forwardOffset).add(0, -0.25F, 0);
-                    this.level().addParticle(new ItemParticleOption(ParticleTypes.ITEM, itemStack), mouthPos.x, mouthPos.y, mouthPos.z, velocity.x, velocity.y, velocity.z);
-                }
-            }
-        }
-
-        // Spawn muddy footprints
-        if (this.getDeltaMovement().horizontalDistanceSqr() > 0.001 && gameTime % 6 == 0 && level.getBlockState(this.getOnPos()).isFaceSturdy(level, this.getOnPos(), Direction.UP))
-        {
-            float yawRad = (float)Math.toRadians(this.yBodyRot);
-            float cos = Mth.cos(yawRad);
-            float sin = Mth.sin(yawRad);
-
-            double stride = 0.25D;
-            double offX = cos * stride;
-            double offZ = sin * stride;
-
-            if (((gameTime / 6) % 2 == 0)) {
-                offX = -offX;
-                offZ = -offZ;
-            }
-
-            double fx = this.getX() + offX;
-            double fy = this.getY();
-            double fz = this.getZ() + offZ;
-
-            this.level().addParticle((ParticleOptions) ParticleTypeRegistry.FOOTPRINT.get(), fx, fy, fz, this.yBodyRot, 0, 0);
+            Vec3 velocity = new Vec3((this.random.nextFloat() - 0.5F) * 0.1F,this.random.nextFloat() * 0.1F + 0.05F,(this.random.nextFloat() - 0.5F) * 0.1F);
+            Vec3 forwardOffset = new Vec3(0, 0, 0.5).yRot(-this.yBodyRot * ((float)Math.PI / 180F));
+            Vec3 mouthPos = this.position().add(0, this.getBbHeight() * 0.85F, 0).add(forwardOffset).add(0, -0.25F, 0);
+            this.level().addParticle(new ItemParticleOption(ParticleTypes.ITEM, itemStack), mouthPos.x, mouthPos.y, mouthPos.z, velocity.x, velocity.y, velocity.z);
         }
     }
 
-    @Override
-    public void aiStep()
+    private void spawnFootprintParticle()
     {
-        super.aiStep();
-
-        if (this.level() instanceof ClientLevel level)
-        {
-            this.customClientAiStep(level);
-        }
+        float yawRad = (float) Math.toRadians(this.yBodyRot);
+        double stride = 0.25D;
+        boolean leftFoot = (this.tickCount / 6) % 2 == 0;
+        double offset = leftFoot ? -stride : stride;
+        double fx = this.getX() + Mth.cos(yawRad) * offset;
+        double fz = this.getZ() + Mth.sin(yawRad) * offset;
+        double fy = this.getY() + (this.random.nextDouble() * 0.02D);
+        this.level().addParticle(new FootprintParticleOption(this.yBodyRot), fx, fy, fz, 0, 0, 0);
     }
 
     @Nullable

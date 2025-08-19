@@ -3,6 +3,7 @@ package lucie.deathtaxes.entity;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
+import com.mojang.serialization.Dynamic;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.behavior.*;
@@ -26,8 +27,10 @@ public class ScavengerAi
             SensorType.NEAREST_LIVING_ENTITIES
     );
 
-    protected static Brain<?> makeBrain(Scavenger scavenger, Brain<Scavenger> brain)
+    @SuppressWarnings("unchecked")
+    protected static Brain<?> makeBrain(Scavenger scavenger, Dynamic<?> dynamic)
     {
+        Brain<Scavenger> brain = (Brain<Scavenger>) scavenger.brainProvider().makeBrain(dynamic);
         initCoreActivity(brain);
         initIdleActivity(brain);
         brain.setCoreActivities(ImmutableSet.of(Activity.CORE));
