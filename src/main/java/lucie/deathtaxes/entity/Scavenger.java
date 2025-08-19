@@ -1,10 +1,11 @@
 package lucie.deathtaxes.entity;
 
 import com.mojang.serialization.Dynamic;
-import lucie.deathtaxes.event.ClientEvent;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ItemParticleOption;
+import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
@@ -25,6 +26,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
+import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -113,6 +115,46 @@ public class Scavenger extends PathfinderMob
             this.level().addParticle(ParticleTypes.ENTITY_EFFECT, this.getX() + (double)f1 * 0.7D, this.getY() + 1.9D, this.getZ() + (double)f2 * 0.7D, 0.6F, 0.6F, 0.4F);
             this.level().addParticle(ParticleTypes.ENTITY_EFFECT, this.getX() - (double)f1 * 0.7D, this.getY() + 1.9D, this.getZ() - (double)f2 * 0.7D, 0.6F, 0.6F, 0.4F);
         }
+
+        // Spawn eating particles
+        if (this.getPoseData() == Pose.CONSUMING && gameTime % 8 == 0)
+        {
+            ItemStack itemStack = this.getConsumingItemstack();
+
+            if (!itemStack.isEmpty())
+            {
+                for (int i = 0; i < 4; i++)
+                {
+                    Vec3 velocity = new Vec3((this.random.nextFloat() - 0.5F) * 0.1F,this.random.nextFloat() * 0.1F + 0.05F,(this.random.nextFloat() - 0.5F) * 0.1F);
+                    Vec3 forwardOffset = new Vec3(0, 0, 0.5).yRot(-this.yBodyRot * ((float)Math.PI / 180F));
+                    Vec3 mouthPos = this.position().add(0, this.getBbHeight() * 0.85F, 0).add(forwardOffset).add(0, -0.25F, 0);
+                    this.level().addParticle(new ItemParticleOption(ParticleTypes.ITEM, itemStack), mouthPos.x, mouthPos.y, mouthPos.z, velocity.x, velocity.y, velocity.z);
+                }
+            }
+        }
+
+        // Spawn muddy footprints
+        if (this.getDeltaMovement().horizontalDistanceSqr() > 0.001 && gameTime % 6 == 0 && level.getBlockState(this.getOnPos()).isFaceSturdy(level, this.getOnPos(), Direction.UP))
+        {
+            float yawRad = (float)Math.toRadians(this.yBodyRot);
+            float cos = Mth.cos(yawRad);
+            float sin = Mth.sin(yawRad);
+
+            double stride = 0.25D;
+            double offX = cos * stride;
+            double offZ = sin * stride;
+
+            if (((gameTime / 6) % 2 == 0)) {
+                offX = -offX;
+                offZ = -offZ;
+            }
+
+            double fx = this.getX() + offX;
+            double fy = this.getY();
+            double fz = this.getZ() + offZ;
+
+            this.level().addParticle((ParticleOptions) ParticleTypeRegistry.FOOTPRINT.get(), fx, fy, fz, this.yBodyRot, 0, 0);
+        }
     }
 
     @Override
@@ -178,7 +220,7 @@ public class Scavenger extends PathfinderMob
             return Pose.LANTERN;
         }
 
-        return Pose.APPEARING;
+        return Pose.IDLE;
     }
 
     public enum Pose

@@ -38,10 +38,10 @@ public class EmberParticle extends TextureSheetParticle
     {
         super.tick();
 
-        float t = (float) age / lifetime;
+        float percentage = (float) age / lifetime;
 
         // Buoyancy force
-        double buoyancy = 0.008 * (1.0 - t * 0.7);
+        double buoyancy = 0.008 * (1.0 - percentage * 0.7);
 
         // Air turbulence
         if (age % 3 == 0)
@@ -65,15 +65,15 @@ public class EmberParticle extends TextureSheetParticle
         this.yd *= 0.98;
 
         // Gravity
-        this.yd -= 0.002 * t;
+        this.yd -= 0.002 * percentage;
 
         // Particle color cooldown
-        Vector3f col = getInterpolatedColor(t);
+        Vector3f col = getInterpolatedColor(percentage);
         this.setColor(col.x(), col.y(), col.z());
 
-        if (t > 0.7f)
+        if (percentage > 0.7f)
         {
-            this.setAlpha((1.0f - t) / 0.3f);
+            this.setAlpha((1.0f - percentage) / 0.3f);
         }
     }
 
@@ -121,11 +121,11 @@ public class EmberParticle extends TextureSheetParticle
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static class EmberProvider implements ParticleProvider<SimpleParticleType>
+    public static class Provider implements ParticleProvider<SimpleParticleType>
     {
         private final SpriteSet sprites;
 
-        public EmberProvider(SpriteSet spriteSet)
+        public Provider(SpriteSet spriteSet)
         {
             this.sprites = spriteSet;
         }

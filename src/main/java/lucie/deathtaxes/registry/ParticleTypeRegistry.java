@@ -11,6 +11,8 @@ public class ParticleTypeRegistry
 {
     public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES = DeferredRegister.create(Registries.PARTICLE_TYPE, DeathTaxes.MOD_ID);
 
+    public static final RegistryObject<ParticleType<SimpleParticleType>> FOOTPRINT = PARTICLE_TYPES.register("footprint", () -> new SimpleParticleType(false));
+
     public static final RegistryObject<ParticleType<SimpleParticleType>> EMBER = PARTICLE_TYPES.register("ember", () -> new SimpleParticleType(false));
 
     public static final RegistryObject<ParticleType<SimpleParticleType>> FLY = PARTICLE_TYPES.register("fly", () -> new SimpleParticleType(false));

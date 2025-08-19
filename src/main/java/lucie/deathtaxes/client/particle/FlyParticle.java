@@ -47,11 +47,11 @@ public class FlyParticle extends TextureSheetParticle
     }
 
     @OnlyIn(Dist.CLIENT)
-    public static class FlyProvider implements ParticleProvider<SimpleParticleType>
+    public static class Provider implements ParticleProvider<SimpleParticleType>
     {
         private final SpriteSet sprite;
 
-        public FlyProvider(SpriteSet sprite)
+        public Provider(SpriteSet sprite)
         {
             this.sprite = sprite;
         }

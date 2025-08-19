@@ -46,7 +46,8 @@ public class ScavengerAi
     {
         brain.addActivity(Activity.CORE, ImmutableList.of(
                 Pair.of(0, new LookAtTargetSink(45, 90)),
-                Pair.of(1, new MoveToTargetSink())
+                Pair.of(1, new MoveToTargetSink()),
+                Pair.of(2, SetWalkTargetFromLookTarget.create(0.75F, 3))
         ));
     }
 
