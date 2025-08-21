@@ -48,16 +48,15 @@ public class ScavengerAi
     private static void initCoreActivity(Brain<Scavenger> brain)
     {
         brain.addActivity(Activity.CORE, ImmutableList.of(
-                Pair.of(0, new LookAtTargetSink(45, 90)),
-                Pair.of(1, new MoveToTargetSink()),
-                Pair.of(2, SetWalkTargetFromLookTarget.create(0.75F, 3))
+                Pair.of(0, new Swim(0.8F))
         ));
     }
 
     private static void initIdleActivity(Brain<Scavenger> brain)
     {
         brain.addActivity(Activity.IDLE, ImmutableList.of(
-                Pair.of(2, SetEntityLookTarget.create(EntityType.PLAYER, 8.0F))
+                Pair.of(2, SetEntityLookTarget.create(EntityType.PLAYER, 8.0F)),
+                Pair.of(0, RandomStroll.stroll(1.0F))
         ));
     }
 
