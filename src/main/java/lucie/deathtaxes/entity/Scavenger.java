@@ -16,10 +16,14 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.DifficultyInstance;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.*;
 import net.minecraft.world.entity.ai.Brain;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
+import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.monster.Monster;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -37,6 +41,7 @@ public class Scavenger extends PathfinderMob
     public Scavenger(EntityType<? extends PathfinderMob> entityType, Level level)
     {
         super(entityType, level);
+        this.getNavigation().setCanFloat(true);
     }
 
     public static AttributeSupplier registerAttributes()
@@ -72,9 +77,47 @@ public class Scavenger extends PathfinderMob
     }
 
     @Override
+    public boolean hurt(@Nonnull DamageSource source, float amount)
+    {
+        if (super.hurt(source, amount))
+        {
+            Entity entity = source.getEntity();
+
+            if (entity instanceof LivingEntity livingEntity && this.canAttack(livingEntity))
+            {
+                this.brain.setMemory(MemoryModuleType.ANGRY_AT, livingEntity.getUUID());
+                this.brain.setMemory(MemoryModuleType.ATTACK_TARGET, livingEntity);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
+    public boolean doHurtTarget(@Nonnull Entity entity)
+    {
+        if (super.doHurtTarget(entity))
+        {
+            if (entity instanceof LivingEntity livingEntity)
+            {
+                float difficulty = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
+                livingEntity.addEffect(new MobEffectInstance(MobEffects.WITHER, (int) (140 * difficulty)), this);
+            }
+
+            return true;
+        }
+
+        return false;
+    }
+
+    @Override
     public void aiStep()
     {
         super.aiStep();
+
+        this.updateSwingTime();
 
         if (this.level().isClientSide)
         {
