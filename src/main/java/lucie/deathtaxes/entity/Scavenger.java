@@ -33,6 +33,7 @@ import net.minecraft.world.phys.Vec3;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
+import java.util.function.Consumer;
 
 public class Scavenger extends PathfinderMob
 {
@@ -113,6 +114,58 @@ public class Scavenger extends PathfinderMob
     }
 
     @Override
+    public boolean canBeAffected(@Nonnull MobEffectInstance effectInstance)
+    {
+        return !MobEffects.WITHER.equals(effectInstance.getEffect()) && super.canBeAffected(effectInstance);
+    }
+
+    @Nullable
+    @Override
+    @SuppressWarnings("deprecation")
+    public SpawnGroupData finalizeSpawn(@Nonnull ServerLevelAccessor level, @Nonnull DifficultyInstance difficulty, @Nonnull MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag compoundTag)
+    {
+        this.populateDefaultEquipmentSlots(level.getRandom(), difficulty);
+
+        return super.finalizeSpawn(level, difficulty, reason, spawnData, compoundTag);
+    }
+
+    @Override
+    protected void populateDefaultEquipmentSlots(@Nonnull RandomSource random, @Nonnull DifficultyInstance difficulty)
+    {
+        this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SHOVEL));
+
+        super.populateDefaultEquipmentSlots(random, difficulty);
+    }
+
+    @Override
+    protected void defineSynchedData()
+    {
+        super.defineSynchedData();
+        this.entityData.define(CONSUMING_ITEMSTACK, ItemStack.EMPTY);
+    }
+
+    public void setConsumingItemstack(ItemStack itemstack)
+    {
+        this.entityData.set(CONSUMING_ITEMSTACK, itemstack);
+    }
+
+    public ItemStack getConsumingItemstack()
+    {
+        return this.entityData.get(CONSUMING_ITEMSTACK);
+    }
+
+    @Override
+    protected void customServerAiStep()
+    {
+        ProfilerFiller profilerfiller = this.level().getProfiler();
+        profilerfiller.push("scavengerBrain");
+        this.getBrain().tick((ServerLevel) this.level(), this);
+        profilerfiller.popPush("scavengerActivityUpdate");
+        ScavengerAi.updateActivities(this);
+        profilerfiller.pop();
+    }
+
+    @Override
     public void aiStep()
     {
         super.aiStep();
@@ -131,41 +184,9 @@ public class Scavenger extends PathfinderMob
                 this.spawnFootprintParticle();
             }
 
-            // Lantern emits embers
-            if (this.getPoseData() == Pose.LANTERN && time % 10 == 0)
-            {
-                this.spawnEmberParticle();
-            }
-
-            // Offering reveals flies inside the coat
-            if (this.getPoseData() == Pose.OFFERING && time % 30 == 0)
-            {
-                this.spawnFlyParticle();
-            }
-
-            // Appearing uses particle style similar to evokers spellcasting
-            if (this.getPoseData() == Pose.APPEARING && time % 4 == 0)
-            {
-                this.spawnGlowingParticle();
-            }
-
-            // Consuming creates item particles of consuming itemstack
-            if (this.getPoseData() == Pose.CONSUMING && time % 8 == 0)
-            {
-                this.spawnConsumeParticle();
-            }
+            // Try to spawn particle related to the current pose
+            this.getPoseData().trySpawnParticle(this, time);
         }
-    }
-
-    @Override
-    protected void customServerAiStep()
-    {
-        ProfilerFiller profilerfiller = this.level().getProfiler();
-        profilerfiller.push("scavengerBrain");
-        this.getBrain().tick((ServerLevel) this.level(), this);
-        profilerfiller.popPush("scavengerActivityUpdate");
-        ScavengerAi.updateActivities(this);
-        profilerfiller.pop();
     }
 
     private void spawnEmberParticle()
@@ -223,41 +244,6 @@ public class Scavenger extends PathfinderMob
         this.level().addParticle(new FootprintParticleOption(this.yBodyRot), fx, fy, fz, 0, 0, 0);
     }
 
-    @Nullable
-    @Override
-    @SuppressWarnings("deprecation")
-    public SpawnGroupData finalizeSpawn(@Nonnull ServerLevelAccessor level, @Nonnull DifficultyInstance difficulty, @Nonnull MobSpawnType reason, @Nullable SpawnGroupData spawnData, @Nullable CompoundTag compoundTag)
-    {
-        this.populateDefaultEquipmentSlots(level.getRandom(), difficulty);
-
-        return super.finalizeSpawn(level, difficulty, reason, spawnData, compoundTag);
-    }
-
-    @Override
-    protected void populateDefaultEquipmentSlots(@Nonnull RandomSource random, @Nonnull DifficultyInstance difficulty)
-    {
-        this.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SHOVEL));
-
-        super.populateDefaultEquipmentSlots(random, difficulty);
-    }
-
-    @Override
-    protected void defineSynchedData()
-    {
-        super.defineSynchedData();
-        this.entityData.define(CONSUMING_ITEMSTACK, ItemStack.EMPTY);
-    }
-
-    public void setConsumingItemstack(ItemStack itemstack)
-    {
-        this.entityData.set(CONSUMING_ITEMSTACK, itemstack);
-    }
-
-    public ItemStack getConsumingItemstack()
-    {
-        return this.entityData.get(CONSUMING_ITEMSTACK);
-    }
-
     public Pose getPoseData()
     {
         if (this.isAggressive())
@@ -280,11 +266,29 @@ public class Scavenger extends PathfinderMob
 
     public enum Pose
     {
-        OFFERING,
-        ATTACKING,
-        APPEARING,
-        CONSUMING,
-        LANTERN,
-        IDLE
+        OFFERING(30, Scavenger::spawnFlyParticle),
+        APPEARING(4, Scavenger::spawnGlowingParticle),
+        CONSUMING(8, Scavenger::spawnConsumeParticle),
+        LANTERN(10, Scavenger::spawnEmberParticle),
+        ATTACKING(0, null),
+        IDLE(0, null);
+
+        private final int interval;
+
+        private final Consumer<Scavenger> particle;
+
+        Pose(int interval, Consumer<Scavenger> particle)
+        {
+            this.interval = interval;
+            this.particle = particle;
+        }
+
+        public void trySpawnParticle(Scavenger scavenger, long tickCount)
+        {
+            if (particle != null && interval > 0 && tickCount % interval == 0)
+            {
+                particle.accept(scavenger);
+            }
+        }
     }
 }
