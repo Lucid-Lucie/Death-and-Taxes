@@ -4,6 +4,8 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Dynamic;
+import lucie.deathtaxes.entity.behavior.UseHealingItem;
+import lucie.deathtaxes.registry.MemoryModuleTypeRegistry;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.ai.Brain;
@@ -24,7 +26,8 @@ public class ScavengerAi
             MemoryModuleType.PATH,
             MemoryModuleType.ATTACK_TARGET,
             MemoryModuleType.ATTACK_COOLING_DOWN,
-            MemoryModuleType.ANGRY_AT
+            MemoryModuleType.ANGRY_AT,
+            MemoryModuleTypeRegistry.CONSUMING_COOLDOWN.get()
     );
 
     protected static final ImmutableList<SensorType<? extends Sensor<? super Scavenger>>> SENSOR_TYPES = ImmutableList.of(
@@ -57,7 +60,8 @@ public class ScavengerAi
     {
         brain.addActivity(Activity.CORE, ImmutableList.of(
                 Pair.of(0, new Swim(0.8F)),
-                Pair.of(0, new LookAtTargetSink(45, 90)),
+                Pair.of(0, new CountDownCooldownTicks(MemoryModuleTypeRegistry.CONSUMING_COOLDOWN.get())),
+                Pair.of(1, new LookAtTargetSink(45, 90)),
                 Pair.of(1, new MoveToTargetSink())
         ));
     }
@@ -65,7 +69,8 @@ public class ScavengerAi
     private static void initIdleActivity(Brain<Scavenger> brain)
     {
         brain.addActivity(Activity.IDLE, ImmutableList.of(
-                Pair.of(2, SetEntityLookTarget.create(EntityType.PLAYER, 8.0F))
+                Pair.of(2, SetEntityLookTarget.create(EntityType.PLAYER, 8.0F)),
+                Pair.of(3, new UseHealingItem())
         ));
     }
 

@@ -23,4 +23,5 @@
 **2.0.0**
 * Reworked entire mod
 * Added optional resource pack for versions under 1.21.5
-* Added new animations for the Scavenger
+* Added new animations
+* Added new behaviors

@@ -2,6 +2,7 @@ package lucie.deathtaxes;
 
 import lucie.deathtaxes.registry.EntityTypeRegistry;
 import lucie.deathtaxes.registry.ItemRegistry;
+import lucie.deathtaxes.registry.MemoryModuleTypeRegistry;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -19,6 +20,7 @@ public class DeathTaxes
         EntityTypeRegistry.ENTITY_TYPES.register(bus);
         ItemRegistry.ITEMS.register(bus);
         ParticleTypeRegistry.PARTICLE_TYPES.register(bus);
+        MemoryModuleTypeRegistry.MEMORY_MODULE_TYPES.register(bus);
     }
 
     public static ResourceLocation withModNamespace(String path)
