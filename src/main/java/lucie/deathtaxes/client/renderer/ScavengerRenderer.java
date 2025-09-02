@@ -5,6 +5,7 @@ import lucie.deathtaxes.DeathTaxes;
 import lucie.deathtaxes.client.layer.*;
 import lucie.deathtaxes.client.model.ScavengerModel;
 import lucie.deathtaxes.entity.Scavenger;
+import lucie.deathtaxes.entity.ScavengerPose;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.MobRenderer;
@@ -29,7 +30,7 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerModel>
             @Override
             public void render(@Nonnull PoseStack poseStack, @Nonnull MultiBufferSource multiBufferSource, int packedLight, @Nonnull Scavenger scavenger, float limbSwing, float limbSwingAmount, float partialTicks, float ageInTicks, float netHeadYaw, float headPitch)
             {
-                if (scavenger.getPoseData() == Scavenger.Pose.ATTACKING)
+                if (scavenger.getScavengerPose() == ScavengerPose.ATTACKING)
                 {
                     super.render(poseStack, multiBufferSource, packedLight, scavenger, limbSwing, limbSwingAmount, partialTicks, ageInTicks, netHeadYaw, headPitch);
                 }
@@ -46,7 +47,7 @@ public class ScavengerRenderer extends MobRenderer<Scavenger, ScavengerModel>
     @Override
     public void render(@Nonnull Scavenger scavenger, float entityYaw, float partialTicks, @Nonnull PoseStack poseStack, @Nonnull MultiBufferSource multiBufferSource, int packedLight)
     {
-        if (scavenger.getPoseData() == Scavenger.Pose.LANTERN)
+        if (scavenger.getScavengerPose() == ScavengerPose.LANTERN)
         {
             packedLight = 200;
         }

@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import lucie.deathtaxes.client.model.ScavengerModel;
 import lucie.deathtaxes.entity.Scavenger;
+import lucie.deathtaxes.entity.ScavengerPose;
 import net.minecraft.client.renderer.ItemInHandRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
@@ -27,9 +28,9 @@ public class ScavengerItemLayer extends RenderLayer<Scavenger, ScavengerModel>
     @Override
     public void render(@Nonnull PoseStack poseStack, @Nonnull MultiBufferSource bufferSource, int packedLight, @Nonnull Scavenger scavenger, float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch)
     {
-        Scavenger.Pose pose = scavenger.getPoseData();
+        ScavengerPose pose = scavenger.getScavengerPose();
 
-        if (pose == Scavenger.Pose.OFFERING)
+        if (pose == ScavengerPose.OFFERING)
         {
             poseStack.pushPose();
             poseStack.mulPose(Axis.XP.rotation((float)Math.PI));
@@ -40,7 +41,7 @@ public class ScavengerItemLayer extends RenderLayer<Scavenger, ScavengerModel>
             poseStack.popPose();
         }
 
-        if (pose == Scavenger.Pose.CONSUMING)
+        if (pose == ScavengerPose.CONSUMING)
         {
             ItemStack itemstack = scavenger.getConsumingItemstack();
 

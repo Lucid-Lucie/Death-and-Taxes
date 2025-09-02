@@ -2,11 +2,8 @@ package lucie.deathtaxes.entity;
 
 import com.mojang.serialization.Dynamic;
 import lucie.deathtaxes.client.particle.FootprintParticleOption;
-import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ItemParticleOption;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -25,24 +22,25 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.monster.Monster;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.phys.Vec3;
+import net.minecraft.world.level.block.state.BlockState;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
-import java.util.function.Consumer;
 
 public class Scavenger extends PathfinderMob
 {
-    private static final EntityDataAccessor<ItemStack> CONSUMING_ITEMSTACK = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.ITEM_STACK);
+    private static final EntityDataAccessor<ItemStack> CONSUMING_ITEMSTACK_ID = SynchedEntityData.defineId(Scavenger.class, EntityDataSerializers.ITEM_STACK);
 
     public Scavenger(EntityType<? extends PathfinderMob> entityType, Level level)
     {
         super(entityType, level);
         this.getNavigation().setCanFloat(true);
+        this.entityData.define(CONSUMING_ITEMSTACK_ID, ItemStack.EMPTY);
     }
 
     public static AttributeSupplier registerAttributes()
@@ -104,7 +102,7 @@ public class Scavenger extends PathfinderMob
             if (entity instanceof LivingEntity livingEntity)
             {
                 float difficulty = this.level().getCurrentDifficultyAt(this.blockPosition()).getEffectiveDifficulty();
-                livingEntity.addEffect(new MobEffectInstance(MobEffects.WITHER, (int) (140 * difficulty)), this);
+                livingEntity.addEffect(new MobEffectInstance(MobEffects.WITHER, Mth.floor(140.0F * difficulty)), this);
             }
 
             return true;
@@ -116,7 +114,13 @@ public class Scavenger extends PathfinderMob
     @Override
     public boolean canBeAffected(@Nonnull MobEffectInstance effectInstance)
     {
-        return !MobEffects.WITHER.equals(effectInstance.getEffect()) && super.canBeAffected(effectInstance);
+        return effectInstance.getEffect() != MobEffects.WITHER && super.canBeAffected(effectInstance);
+    }
+
+    @Override
+    public boolean canBeLeashed(@Nonnull Player player)
+    {
+        return false;
     }
 
     @Nullable
@@ -138,23 +142,6 @@ public class Scavenger extends PathfinderMob
     }
 
     @Override
-    protected void defineSynchedData()
-    {
-        super.defineSynchedData();
-        this.entityData.define(CONSUMING_ITEMSTACK, ItemStack.EMPTY);
-    }
-
-    public void setConsumingItemstack(ItemStack itemstack)
-    {
-        this.entityData.set(CONSUMING_ITEMSTACK, itemstack);
-    }
-
-    public ItemStack getConsumingItemstack()
-    {
-        return this.entityData.get(CONSUMING_ITEMSTACK);
-    }
-
-    @Override
     protected void customServerAiStep()
     {
         ProfilerFiller profilerfiller = this.level().getProfiler();
@@ -172,123 +159,50 @@ public class Scavenger extends PathfinderMob
 
         this.updateSwingTime();
 
-        if (this.level().isClientSide)
+        if (!this.level().isClientSide) return;
+
+        Level level = this.level();
+        BlockPos blockPos = this.getOnPos();
+        BlockState blockState = level.getBlockState(blockPos);
+        ScavengerPose pose = ScavengerPose.getInstance(this);
+
+        // Walking leaves muddy footprints
+        if (this.walkAnimation.isMoving() && this.tickCount % 6 == 0 && blockState.isFaceSturdy(level, blockPos, Direction.UP))
         {
-            long time = this.tickCount;
-            Level level = this.level();
-            BlockPos blockPos = this.getOnPos();
+            float yaw = this.yBodyRot * Mth.DEG_TO_RAD;
+            double stride = ((this.tickCount / 6) % 2 == 0 ? -0.25D : 0.25D);
+            this.level().addParticle(new FootprintParticleOption(this.yBodyRot), this.getX() + Mth.cos(yaw) * stride, this.getY() + this.random.nextDouble() * 0.02D, this.getZ() + Mth.sin(yaw) * stride, 0, 0, 0);
+        }
 
-            // Walking leaves muddy footprints
-            if (this.getDeltaMovement().horizontalDistanceSqr() > 0.001 && time % 6 == 0 && level.getBlockState(blockPos).isFaceSturdy(level, blockPos, Direction.UP))
-            {
-                this.spawnFootprintParticle();
-            }
-
-            // Try to spawn particle related to the current pose
-            this.getPoseData().trySpawnParticle(this, time);
+        // Try to spawn particle related to the current pose
+        if (pose.canUse(this.tickCount))
+        {
+            pose.tryUse(this, level, this.random, this.tickCount);
         }
     }
 
-    private void spawnEmberParticle()
+    public ScavengerPose getScavengerPose()
     {
-        double r = (this.getBbWidth() / 2) + 0.2 + this.level().random.nextDouble() * 0.5;
-        double a = this.level().random.nextDouble() * Math.PI * 2;
-        double y = this.getY() + (this.level().random.nextDouble() * this.getBbHeight());
-        this.level().addParticle(ParticleTypeRegistry.EMBER.get(), this.getX() + Math.cos(a) * r, y, this.getZ() + Math.sin(a) * r, 0, 0, 0);
+        return ScavengerPose.getInstance(this);
     }
 
-    private void spawnFlyParticle()
+    public void setConsumingItemstack(ItemStack itemstack)
     {
-        double x = this.getX() + this.random.nextDouble() * (double) 2.5F - (double) 1.25F;
-        double y = this.getY() + this.random.nextDouble() * (double) 2.5F;
-        double z = this.getZ() + this.random.nextDouble() * (double) 2.5F - (double) 1.25F;
-        this.level().addParticle(ParticleTypeRegistry.FLY.get(), x, y, z, 0.0F, 0.0F, 0.0F);
+        this.entityData.set(CONSUMING_ITEMSTACK_ID, itemstack);
     }
 
-    private void spawnGlowingParticle()
+    public ItemStack getConsumingItemstack()
     {
-        float f = this.yBodyRot * ((float)Math.PI / 180F) + Mth.cos((float)this.tickCount * 0.6662F) * 0.5F;
-        float f1 = Mth.cos(f);
-        float f2 = Mth.sin(f);
-        this.level().addParticle(ParticleTypes.ENTITY_EFFECT, this.getX() + (double)f1 * 0.7D, this.getY() + 1.9D, this.getZ() + (double)f2 * 0.7D, 0.6F, 0.6F, 0.4F);
-        this.level().addParticle(ParticleTypes.ENTITY_EFFECT, this.getX() - (double)f1 * 0.7D, this.getY() + 1.9D, this.getZ() - (double)f2 * 0.7D, 0.6F, 0.6F, 0.4F);
+        return this.entityData.get(CONSUMING_ITEMSTACK_ID);
     }
 
-    private void spawnConsumeParticle()
+    public boolean isOffering()
     {
-        ItemStack itemStack = this.getConsumingItemstack();
-
-        if (itemStack.isEmpty())
-        {
-            return;
-        }
-
-        for (int i = 0; i < 4; i++)
-        {
-            Vec3 velocity = new Vec3((this.random.nextFloat() - 0.5F) * 0.1F,this.random.nextFloat() * 0.1F + 0.05F,(this.random.nextFloat() - 0.5F) * 0.1F);
-            Vec3 forwardOffset = new Vec3(0, 0, 0.5).yRot(-this.yBodyRot * ((float)Math.PI / 180F));
-            Vec3 mouthPos = this.position().add(0, this.getBbHeight() * 0.85F, 0).add(forwardOffset).add(0, -0.25F, 0);
-            this.level().addParticle(new ItemParticleOption(ParticleTypes.ITEM, itemStack), mouthPos.x, mouthPos.y, mouthPos.z, velocity.x, velocity.y, velocity.z);
-        }
+        return false;
     }
 
-    private void spawnFootprintParticle()
+    public boolean isAppearing()
     {
-        float yawRad = (float) Math.toRadians(this.yBodyRot);
-        double stride = 0.25D;
-        boolean leftFoot = (this.tickCount / 6) % 2 == 0;
-        double offset = leftFoot ? -stride : stride;
-        double fx = this.getX() + Mth.cos(yawRad) * offset;
-        double fz = this.getZ() + Mth.sin(yawRad) * offset;
-        double fy = this.getY() + (this.random.nextDouble() * 0.02D);
-        this.level().addParticle(new FootprintParticleOption(this.yBodyRot), fx, fy, fz, 0, 0, 0);
-    }
-
-    public Pose getPoseData()
-    {
-        if (this.isAggressive())
-        {
-            return Pose.ATTACKING;
-        }
-
-        if (!this.getConsumingItemstack().isEmpty())
-        {
-            return Pose.CONSUMING;
-        }
-
-        if (this.level().getDayTime() >= 13000L && this.level().getDayTime() <= 24000L)
-        {
-            return Pose.LANTERN;
-        }
-
-        return Pose.IDLE;
-    }
-
-    public enum Pose
-    {
-        OFFERING(30, Scavenger::spawnFlyParticle),
-        APPEARING(4, Scavenger::spawnGlowingParticle),
-        CONSUMING(8, Scavenger::spawnConsumeParticle),
-        LANTERN(10, Scavenger::spawnEmberParticle),
-        ATTACKING(0, null),
-        IDLE(0, null);
-
-        private final int interval;
-
-        private final Consumer<Scavenger> particle;
-
-        Pose(int interval, Consumer<Scavenger> particle)
-        {
-            this.interval = interval;
-            this.particle = particle;
-        }
-
-        public void trySpawnParticle(Scavenger scavenger, long tickCount)
-        {
-            if (particle != null && interval > 0 && tickCount % interval == 0)
-            {
-                particle.accept(scavenger);
-            }
-        }
+        return false;
     }
 }

@@ -3,6 +3,7 @@ package lucie.deathtaxes.client.layer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import lucie.deathtaxes.entity.Scavenger;
+import lucie.deathtaxes.entity.ScavengerPose;
 import net.minecraft.client.model.ArmedModel;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.renderer.LightTexture;
@@ -33,7 +34,7 @@ public class ScavengerLanternLayer<T extends Scavenger, M extends EntityModel<T>
     @Override
     public void render(@Nonnull PoseStack poseStack, @Nonnull MultiBufferSource multiBufferSource, int packedLight, @Nonnull T scavenger, float limbSwing, float limbSwingAmount, float partialTick, float ageInTicks, float netHeadYaw, float headPitch)
     {
-        if (scavenger.getPoseData() != Scavenger.Pose.LANTERN) return;
+        if (scavenger.getScavengerPose() != ScavengerPose.LANTERN) return;
 
         BlockState blockState = Blocks.LANTERN.defaultBlockState().setValue(LanternBlock.HANGING, true);
         HumanoidArm humanoidarm = scavenger.getMainArm();

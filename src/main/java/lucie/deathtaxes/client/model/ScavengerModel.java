@@ -4,6 +4,7 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import lucie.deathtaxes.DeathTaxes;
 import lucie.deathtaxes.entity.Scavenger;
+import lucie.deathtaxes.entity.ScavengerPose;
 import net.minecraft.client.model.AnimationUtils;
 import net.minecraft.client.model.ArmedModel;
 import net.minecraft.client.model.EntityModel;
@@ -12,7 +13,6 @@ import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.model.geom.ModelPart;
 import net.minecraft.client.model.geom.PartPose;
 import net.minecraft.client.model.geom.builders.*;
-import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.HumanoidArm;
 
@@ -95,7 +95,7 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
     @Override
     public void setupAnim(@Nonnull Scavenger scavenger, float limbSwing, float limbSwingAmount, float ageInTicks, float netHeadYaw, float headPitch)
     {
-        Scavenger.Pose pose = scavenger.getPoseData();
+        ScavengerPose pose = scavenger.getScavengerPose();
         HumanoidArm arm = scavenger.getMainArm();
 
         // Reset extra additions
@@ -124,7 +124,7 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
         this.leftLeg.yRot = 0.0F;
         this.leftLeg.zRot = 0.0F;
 
-        if (pose == Scavenger.Pose.OFFERING)
+        if (pose == ScavengerPose.OFFERING)
         {
             this.arms.visible = true;
 
@@ -140,7 +140,7 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
             AnimationUtils.bobModelPart(this.rightArm, ageInTicks, 1.0F);
         }
 
-        if (pose == Scavenger.Pose.ATTACKING)
+        if (pose == ScavengerPose.ATTACKING)
         {
             this.arms.visible = true;
 
@@ -162,7 +162,7 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
             }
         }
 
-        if (pose == Scavenger.Pose.APPEARING)
+        if (pose == ScavengerPose.APPEARING)
         {
             this.arms.visible = true;
 
@@ -179,7 +179,7 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
             this.head.xRot = (float) Math.toRadians(-10);
         }
 
-        if (pose == Scavenger.Pose.CONSUMING)
+        if (pose == ScavengerPose.CONSUMING)
         {
             this.crossedArms.visible = true;
 
@@ -191,7 +191,7 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
             this.crossedArms.xRot = (float) Math.toRadians(-50 + (animation * - 10));
         }
 
-        if (pose == Scavenger.Pose.LANTERN)
+        if (pose == ScavengerPose.LANTERN)
         {
             this.arms.visible = true;
 
@@ -207,7 +207,7 @@ public class ScavengerModel extends EntityModel<Scavenger> implements ArmedModel
             }
         }
 
-        if (pose == Scavenger.Pose.IDLE)
+        if (pose == ScavengerPose.IDLE)
         {
             this.crossedArms.visible = true;
             this.crossedArms.xRot = (float) Math.toRadians(-45);

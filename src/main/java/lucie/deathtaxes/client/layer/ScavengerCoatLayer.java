@@ -5,6 +5,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import lucie.deathtaxes.DeathTaxes;
 import lucie.deathtaxes.client.model.ScavengerModel;
 import lucie.deathtaxes.entity.Scavenger;
+import lucie.deathtaxes.entity.ScavengerPose;
 import net.minecraft.client.model.EntityModel;
 import net.minecraft.client.model.geom.ModelLayerLocation;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -37,7 +38,7 @@ public class ScavengerCoatLayer<T extends Scavenger, M extends EntityModel<T>> e
     {
         if (scavenger.isInvisible()) return;
 
-        ResourceLocation texture = scavenger.getPoseData() == Scavenger.Pose.OFFERING ? TEXTURE_COAT_OPEN_LOCATION : TEXTURE_COAT_CLOSED_LOCATION;
+        ResourceLocation texture = scavenger.getScavengerPose() == ScavengerPose.OFFERING ? TEXTURE_COAT_OPEN_LOCATION : TEXTURE_COAT_CLOSED_LOCATION;
         VertexConsumer consumer = multiBufferSource.getBuffer(RenderType.entityCutoutNoCull(texture));
         int overlay = LivingEntityRenderer.getOverlayCoords(scavenger, 0.0F);
         this.model.setupAnim(scavenger, limbSwing, limbSwingAmount, ageInTicks, netHeadYaw, headPitch);

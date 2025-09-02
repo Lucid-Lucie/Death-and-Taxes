@@ -1,9 +1,6 @@
 package lucie.deathtaxes;
 
-import lucie.deathtaxes.registry.EntityTypeRegistry;
-import lucie.deathtaxes.registry.ItemRegistry;
-import lucie.deathtaxes.registry.MemoryModuleTypeRegistry;
-import lucie.deathtaxes.registry.ParticleTypeRegistry;
+import lucie.deathtaxes.registry.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fml.common.Mod;
