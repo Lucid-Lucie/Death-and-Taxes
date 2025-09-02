@@ -2,6 +2,7 @@ package lucie.deathtaxes.entity;
 
 import com.mojang.serialization.Dynamic;
 import lucie.deathtaxes.client.particle.FootprintParticleOption;
+import lucie.deathtaxes.registry.SoundEventRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -9,6 +10,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -179,6 +181,27 @@ public class Scavenger extends PathfinderMob
         {
             pose.tryUse(this, level, this.random, this.tickCount);
         }
+    }
+
+    @Nullable
+    @Override
+    protected SoundEvent getAmbientSound()
+    {
+        return SoundEventRegistry.SCAVENGER_AMBIENT.get();
+    }
+
+    @Nullable
+    @Override
+    protected SoundEvent getHurtSound(@Nonnull DamageSource damageSource)
+    {
+        return SoundEventRegistry.SCAVENGER_HURT.get();
+    }
+
+    @Nullable
+    @Override
+    protected SoundEvent getDeathSound()
+    {
+        return SoundEventRegistry.SCAVENGER_DEATH.get();
     }
 
     public ScavengerPose getScavengerPose()

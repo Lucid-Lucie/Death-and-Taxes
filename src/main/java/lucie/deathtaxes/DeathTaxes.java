@@ -18,6 +18,7 @@ public class DeathTaxes
         ItemRegistry.ITEMS.register(bus);
         ParticleTypeRegistry.PARTICLE_TYPES.register(bus);
         MemoryModuleTypeRegistry.MEMORY_MODULE_TYPES.register(bus);
+        SoundEventRegistry.SOUND_EVENTS.register(bus);
     }
 
     public static ResourceLocation withModNamespace(String path)

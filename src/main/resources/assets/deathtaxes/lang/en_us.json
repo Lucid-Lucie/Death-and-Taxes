@@ -2,5 +2,11 @@
   "entity.deathtaxes.scavenger": "Scavenger",
   "item.deathtaxes.scavenger_spawn_egg": "Scavenger Spawn Egg",
   "pack.deathtaxes.alternate_spawn_egg.title": "Alternate Spawn Egg",
-  "pack.deathtaxes.alternate_spawn_egg.description": "1.21.5 spawn egg style for the Scavenger"
+  "pack.deathtaxes.alternate_spawn_egg.description": "1.21.5 spawn egg style for the Scavenger",
+  "subtitles.deathtaxes.entity.scavenger.ambient": "Scavenger mumbles",
+  "subtitles.deathtaxes.entity.scavenger.death": "Scavenger dies",
+  "subtitles.deathtaxes.entity.scavenger.hurt": "Scavenger hurts",
+  "subtitles.deathtaxes.entity.scavenger.eat": "Scavenger eats",
+  "subtitles.deathtaxes.entity.scavenger.burp": "Scavenger burps",
+  "subtitles.deathtaxes.misc.flies": "Flies buzzing"
 }

@@ -3,9 +3,9 @@ package lucie.deathtaxes.entity.behavior;
 import com.google.common.collect.ImmutableMap;
 import lucie.deathtaxes.entity.Scavenger;
 import lucie.deathtaxes.registry.MemoryModuleTypeRegistry;
+import lucie.deathtaxes.registry.SoundEventRegistry;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
 import net.minecraft.world.item.ItemStack;
@@ -14,8 +14,8 @@ import javax.annotation.Nonnull;
 
 public abstract class AbstractUseItem extends Behavior<Scavenger>
 {
-    private static final SoundEvent CONSUME_SOUND = SoundEvents.GENERIC_EAT;
-    private static final SoundEvent CONSUME_FINISH_SOUND = SoundEvents.PLAYER_BURP;
+    private static final SoundEvent CONSUME_SOUND = SoundEventRegistry.SCAVENGER_EAT.get();
+    private static final SoundEvent CONSUME_FINISH_SOUND = SoundEventRegistry.SCAVENGER_BURP.get();
 
     private final ItemStack consumeItem;
 
