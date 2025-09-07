@@ -1,20 +1,20 @@
 package lucie.deathtaxes.event;
 
 import lucie.deathtaxes.DeathTaxes;
+import lucie.deathtaxes.capability.DroppedItems;
 import lucie.deathtaxes.entity.Scavenger;
 import lucie.deathtaxes.registry.EntityTypeRegistry;
 import lucie.deathtaxes.registry.ItemRegistry;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.PathPackResources;
-import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import net.minecraft.server.packs.repository.Pack;
 import net.minecraft.server.packs.repository.PackSource;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
 import net.minecraftforge.event.AddPackFindersEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.event.entity.EntityAttributeCreationEvent;
@@ -25,7 +25,7 @@ import net.minecraftforge.fml.common.Mod;
 import java.nio.file.Path;
 
 @Mod.EventBusSubscriber(modid = DeathTaxes.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD)
-public class CommonEvent
+public class CommonEvents
 {
     @SubscribeEvent
     public static void onEntityAttributeCreation(EntityAttributeCreationEvent event)
@@ -53,5 +53,11 @@ public class CommonEvent
                     id -> new PathPackResources(id, path, true), PackType.CLIENT_RESOURCES, Pack.Position.TOP, PackSource.BUILT_IN);
             event.addRepositorySource(packConsumer -> packConsumer.accept(pack));
         }
+    }
+
+    @SubscribeEvent
+    public static void onRegisterCapabilities(RegisterCapabilitiesEvent event)
+    {
+        event.register(DroppedItems.class);
     }
 }
