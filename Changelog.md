@@ -19,3 +19,6 @@
 **1.3.0**
 * Made Scavenger use Behavior instead of Goals.
 * Added more ambiance.
+
+**1.3.1**
+* Hotfix: Bats can now roam the world again.
