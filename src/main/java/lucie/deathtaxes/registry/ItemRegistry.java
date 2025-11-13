@@ -6,12 +6,12 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.SpawnEggItem;
+import net.neoforged.neoforge.common.DeferredSpawnEggItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
 
 public class ItemRegistry
 {
     public static final DeferredRegister<Item> ITEMS = DeferredRegister.createItems(DeathTaxes.MODID);
 
-    public static final Holder<Item> SCAVENGER_SPAWN_EGG = ITEMS.register("scavenger_spawn_egg", location -> new SpawnEggItem(EntityTypeRegistry.SCAVENGER.value(), new Item.Properties()
-            .setId(ResourceKey.create(Registries.ITEM, location))));
+    public static final Holder<Item> SCAVENGER_SPAWN_EGG = ITEMS.register("scavenger_spawn_egg", location -> new DeferredSpawnEggItem(EntityTypeRegistry.SCAVENGER,  0xb6a895, 0x2d2a28, new Item.Properties()));
 }

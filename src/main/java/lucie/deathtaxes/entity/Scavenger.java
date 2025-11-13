@@ -1,12 +1,17 @@
 package lucie.deathtaxes.entity;
 
+import com.mojang.logging.LogUtils;
+import com.mojang.serialization.DataResult;
 import com.mojang.serialization.Dynamic;
-import lucie.deathtaxes.client.state.ScavengerRenderState;
 import lucie.deathtaxes.registry.ParticleTypeRegistry;
 import lucie.deathtaxes.registry.SoundEventRegistry;
+import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.GlobalPos;
 import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -14,8 +19,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
-import net.minecraft.util.profiling.Profiler;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.DifficultyInstance;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
@@ -36,14 +39,15 @@ import net.minecraft.world.item.trading.MerchantOffer;
 import net.minecraft.world.item.trading.MerchantOffers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.ServerLevelAccessor;
-import net.minecraft.world.level.storage.ValueInput;
-import net.minecraft.world.level.storage.ValueOutput;
+import org.slf4j.Logger;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 public class Scavenger extends PathfinderMob implements Merchant
 {
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     @Nullable
     private Player tradingPlayer;
 
@@ -96,14 +100,14 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    protected void customServerAiStep(@Nonnull ServerLevel level)
+    protected void customServerAiStep()
     {
-        ProfilerFiller profilerfiller = Profiler.get();
-        profilerfiller.push("scavengerBrain");
-        this.getBrain().tick(level, this);
-        profilerfiller.popPush("scavengerActivityUpdate");
+        this.level().getProfiler().push("scavengerBrain");
+        this.getBrain().tick((ServerLevel)this.level(), this);
+        this.level().getProfiler().pop();
+        this.level().getProfiler().push("scavengerActivityUpdate");
         ScavengerAi.updateActivity(this);
-        profilerfiller.pop();
+        this.level().getProfiler().pop();
     }
 
     @Override
@@ -195,9 +199,9 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    public boolean doHurtTarget(@Nonnull ServerLevel serverLevel, @Nonnull Entity entity)
+    public boolean doHurtTarget(@Nonnull Entity entity)
     {
-        if (super.doHurtTarget(serverLevel, entity))
+        if (super.doHurtTarget(entity))
         {
             if (entity instanceof LivingEntity livingEntity)
             {
@@ -212,11 +216,11 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    public boolean hurtServer(@Nonnull ServerLevel serverLevel, @Nonnull DamageSource damageSource, float amount)
+    public boolean hurt(@Nonnull DamageSource source, float amount)
     {
-        if (super.hurtServer(serverLevel, damageSource, amount))
+        if (super.hurt(source, amount))
         {
-            Entity entity = damageSource.getEntity();
+            Entity entity = source.getEntity();
 
             if (entity instanceof LivingEntity livingEntity && !livingEntity.hasInfiniteMaterials())
             {
@@ -291,13 +295,13 @@ public class Scavenger extends PathfinderMob implements Merchant
     @Nullable
     @Override
     @SuppressWarnings("deprecation")
-    public SpawnGroupData finalizeSpawn(@Nonnull ServerLevelAccessor level, @Nonnull DifficultyInstance difficulty, @Nonnull EntitySpawnReason spawnReason, @Nullable SpawnGroupData spawnGroupData)
+    public SpawnGroupData finalizeSpawn(@Nonnull ServerLevelAccessor level, @Nonnull DifficultyInstance difficulty, @Nonnull MobSpawnType spawnReason, @Nullable SpawnGroupData spawnGroupData)
     {
         // Give entity a shovel.
         this.populateDefaultEquipmentSlots(this.random, difficulty);
         this.populateDefaultEquipmentEnchantments(level, this.random, difficulty);
 
-        if (spawnReason == EntitySpawnReason.TRIGGERED)
+        if (spawnReason == MobSpawnType.TRIGGERED)
         {
             // Scavenger only stays for a day when summoned by respawning.
             this.despawnDelay = this.level().getGameTime() + 24000;
@@ -308,7 +312,7 @@ public class Scavenger extends PathfinderMob implements Merchant
         else
         {
             // Fix scavenger pathing when no home is set.
-            this.setHomeTo(this.blockPosition(), 16);
+            this.restrictTo(this.blockPosition(), 16);
         }
 
         return super.finalizeSpawn(level, difficulty, spawnReason, spawnGroupData);
@@ -329,19 +333,30 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    protected void addAdditionalSaveData(@Nonnull ValueOutput output)
+    public void addAdditionalSaveData(@Nonnull CompoundTag compound)
     {
-        super.addAdditionalSaveData(output);
-        output.putLong("DespawnDelay", this.despawnDelay);
-        output.storeNullable("MerchantOffers", MerchantOffers.CODEC, this.merchantOffers);
+        super.addAdditionalSaveData(compound);
+        compound.putLong("DespawnDelay", this.despawnDelay);
+
+        MerchantOffers offers = this.getOffers();
+        if (!offers.isEmpty())
+        {
+            compound.put("MerchantOffers", MerchantOffers.CODEC.encodeStart(this.registryAccess().createSerializationContext(NbtOps.INSTANCE), offers).getOrThrow());
+        }
     }
 
     @Override
-    protected void readAdditionalSaveData(@Nonnull ValueInput output)
+    public void readAdditionalSaveData(@Nonnull CompoundTag compound)
     {
-        super.readAdditionalSaveData(output);
-        this.despawnDelay = output.getLongOr("DespawnDelay", 0L);
-        this.merchantOffers = output.read("MerchantOffers", MerchantOffers.CODEC).orElse(null);
+        super.readAdditionalSaveData(compound);
+        this.despawnDelay = compound.getLong("DespawnDelay");
+
+        if (compound.contains("MerchantOffers"))
+        {
+            DataResult<MerchantOffers> result = MerchantOffers.CODEC.parse(this.registryAccess().createSerializationContext(NbtOps.INSTANCE), compound.get("MerchantOffers"));
+            Logger logger = LOGGER;
+            result.resultOrPartial(Util.prefix("Failed to load offers: ", logger::error)).ifPresent(instance -> this.merchantOffers = instance);
+        }
     }
 
     /* Merchant */
@@ -407,12 +422,6 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    public boolean stillValid(@Nonnull Player player)
-    {
-        return this.getTradingPlayer() == player && this.isAlive() && player.canInteractWithEntity(this, 4.0);
-    }
-
-    @Override
     public int getVillagerXp()
     {
         return 0;
@@ -437,9 +446,9 @@ public class Scavenger extends PathfinderMob implements Merchant
     }
 
     @Override
-    public void setHomeTo(@Nonnull BlockPos blockPos, int distance)
+    public void restrictTo(@Nonnull BlockPos pos, int distance)
     {
-        super.setHomeTo(blockPos, distance);
-        this.brain.setMemory(MemoryModuleType.HOME, GlobalPos.of(this.level().dimension(), blockPos));
+        super.restrictTo(pos, distance);
+        this.brain.setMemory(MemoryModuleType.HOME, GlobalPos.of(this.level().dimension(), pos));
     }
 }

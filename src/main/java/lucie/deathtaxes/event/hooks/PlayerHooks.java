@@ -5,16 +5,14 @@ import lucie.deathtaxes.utility.ItemEvaluation;
 import lucie.deathtaxes.registry.AttachmentTypeRegistry;
 import lucie.deathtaxes.registry.EntityTypeRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.GlobalPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.EntitySpawnReason;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.SpawnPlacementType;
 import net.minecraft.world.entity.SpawnPlacements;
-import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -102,10 +100,10 @@ public class PlayerHooks
             BlockPos spawnpoint = PlayerHooks.locate(level, target, level.random).orElse(target);
 
             // Add merchant offers and a home position.
-            Optional.ofNullable(EntityTypeRegistry.SCAVENGER.value().spawn(level, spawnpoint, EntitySpawnReason.TRIGGERED)).ifPresent(scavenger ->
+            Optional.ofNullable(EntityTypeRegistry.SCAVENGER.value().spawn(level, spawnpoint, MobSpawnType.TRIGGERED)).ifPresent(scavenger ->
             {
                 scavenger.merchantOffers = offers;
-                scavenger.setHomeTo(target, 16);
+                scavenger.restrictTo(target, 16);
             });
         }
     }

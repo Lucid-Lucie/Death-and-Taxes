@@ -6,8 +6,8 @@ import lucie.deathtaxes.registry.AttachmentTypeRegistry;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.MobSpawnType;
 import net.minecraft.world.entity.ai.behavior.Behavior;
 import net.minecraft.world.entity.ai.memory.MemoryModuleType;
 import net.minecraft.world.entity.ai.memory.MemoryStatus;
@@ -50,9 +50,9 @@ public class DramaticEntrance extends Behavior<Scavenger>
         for (int i = 0; i < 2; i++)
         {
             final int index = i;
-            Optional.ofNullable(EntityType.BAT.spawn(level.getLevel(), entity.blockPosition().above(), EntitySpawnReason.TRIGGERED)).ifPresent(bat -> {
+            Optional.ofNullable(EntityType.BAT.spawn(level.getLevel(), entity.blockPosition().above(), MobSpawnType.TRIGGERED)).ifPresent(bat -> {
                 bat.setData(AttachmentTypeRegistry.DESPAWN_TIME.get(), gameTime + 120 + (10 * index));
-                bat.setHomeTo(entity.blockPosition(), 16);
+                bat.restrictTo(entity.blockPosition(), 16);
             });
         }
     }

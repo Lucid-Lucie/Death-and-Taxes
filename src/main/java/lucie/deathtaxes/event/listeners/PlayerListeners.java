@@ -20,7 +20,7 @@ public class PlayerListeners
         {
             ServerPlayer player = (ServerPlayer) event.getEntity();
 
-            event.setCanceled(PlayerHooks.collectDrops(player.level(), player, event.getDrops()));
+            event.setCanceled(PlayerHooks.collectDrops((ServerLevel) player.level(), player, event.getDrops()));
         }
     }
 
@@ -34,6 +34,6 @@ public class PlayerListeners
     public static void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event)
     {
         ServerPlayer player = (ServerPlayer) event.getEntity();
-        PlayerHooks.checkDrops(player.level(), player);
+        PlayerHooks.checkDrops((ServerLevel) player.level(), player);
     }
 }

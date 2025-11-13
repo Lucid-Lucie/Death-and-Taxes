@@ -17,7 +17,7 @@ import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
 import net.neoforged.neoforge.event.entity.EntityAttributeCreationEvent;
 import net.neoforged.neoforge.event.entity.RegisterSpawnPlacementsEvent;
 
-@EventBusSubscriber(modid = DeathTaxes.MODID, bus = EventBusSubscriber.Bus.MOD)
+@EventBusSubscriber(modid = DeathTaxes.MODID)
 public class CommonEvent
 {
     @SubscribeEvent
